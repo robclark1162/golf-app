@@ -3,7 +3,11 @@ import pandas as pd
 import sqlite3
 from datetime import date
 
-DB_FILE = "C:\\Users\\robcl\\OneDrive\\Apps\\Golf App\\Golf_comp.db"
+def get_connection(db_path="Golf_comp.db"):
+    return sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+
+#DB_FILE = "C:\\Users\\robcl\\OneDrive\\Apps\\Golf App\\Golf_comp.db"
+
 import base64
 
 # --- helper: convert image to base64 ---
@@ -61,7 +65,11 @@ def load_courses():
     return df
 
 def load_scores():
+    with get_connection() as conn:
+        df = pd.read_sql(query, conn)
+
     conn = get_connection()
+
     query = """
     SELECT r.round_id, r.round_date, c.name AS course, 
            p.player_id, p.name AS player, s.score, s.birdies, s.eagles, s.hat
