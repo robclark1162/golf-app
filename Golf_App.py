@@ -323,7 +323,7 @@ elif menu == "Summary":
 
                 styled_summary = (
                     summary_df.style
-                    .apply(lambda row: [highlight_ranks(v, col) for v, col in zip(row, summary_df.columns)], axis=1)
+                    .apply(lambda row: [(v, col) for v, col in zip(row, summary_df.columns)], axis=1)
                     .format({
                         "Average": "{:.2f}",
                         "Avg best 6": "{:.2f}",
