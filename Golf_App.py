@@ -116,8 +116,37 @@ def update_score(round_id, player_id, score, birdies, eagles, hat):
     }).eq("round_id", round_id).eq("player_id", player_id).execute()
 
 
-# --- Streamlit UI ---
-st.title("🏌️ Golf Trwitchers Competition Tracker")
+# --- Authentication state ---
+if "user" not in st.session_state:
+    st.session_state["user"] = None
+
+st.title("🏌️ Golf Twitchers Competition Tracker")
+
+if st.session_state["user"] is None:
+    st.subheader("🔑 Login")
+
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        try:
+            res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            if res.user:
+                st.session_state["user"] = res.user
+                st.success(f"✅ Welcome {res.user.email}")
+                st.experimental_rerun()
+            else:
+                st.error("❌ Invalid credentials")
+        except Exception as e:
+            st.error("❌ Login failed")
+
+    st.stop()  # prevent rest of app loading
+else:
+    st.sidebar.success(f"Logged in as {st.session_state['user'].email}")
+    if st.sidebar.button("Logout"):
+        st.session_state["user"] = None
+        st.experimental_rerun()
+
 
 menu = st.sidebar.radio(
     "Menu",
