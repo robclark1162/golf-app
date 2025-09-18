@@ -107,7 +107,7 @@ def update_score(round_id, player_id, score, birdies, eagles, hat):
 
 
 # --- Streamlit UI Placeholder (rest of your Golf_App.py UI remains unchanged) ---
-st.title("🏌️ Golf Twitchers Competition Tracker (Supabase)")
+#st.title("🏌️ Golf Twitchers Competition Tracker (Supabase)")
 
 #menu = st.sidebar.radio("Menu", ["View Scores", "Summary", "Scores by Day", "Add Round", "Edit Round", "Manage Players", "Manage Courses"])
 
