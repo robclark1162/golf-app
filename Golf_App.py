@@ -115,14 +115,14 @@ menu = st.sidebar.radio("Menu", ["View Scores", "Summary", "Scores by Day", "Add
 
 # --- Cap code
 # --- helper: convert image to base64 ---
-def get_base64_image(image_path):
-    with open(image_path, "rb") as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
+#def get_base64_image(image_path):
+ #   with open(image_path, "rb") as f:
+ #       data = f.read()
+ #   return base64.b64encode(data).decode()
 
 # load red cap once at the top
-redcap_base64 = get_base64_image("red_cap.png")
-hat_icon = f'<img src="data:image/png;base64,{redcap_base64}" width="20"/>'
+#redcap_base64 = get_base64_image("red_cap.png")
+#hat_icon = f'<img src="data:image/png;base64,{redcap_base64}" width="20"/>'
 # --- Streamlit UI ---
 st.title("🏌️ Golf Trwitchers Competition Tracker")
 
