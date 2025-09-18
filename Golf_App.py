@@ -288,16 +288,22 @@ elif menu == "Summary":
 
                 summary_df = pd.DataFrame(summary).T
 
-                # --- Ranks (Stableford: higher is better) ---
+# --- Ranks (Stableford: higher is better) ---
                 summary_df["Avg Rank"] = summary_df["Average"].rank(ascending=False, method="min")
                 summary_df["Best Round Rank"] = summary_df["Best Round"].rank(ascending=False, method="min")
                 summary_df["Worst Round Rank"] = summary_df["Worst Round"].rank(ascending=False, method="min")
                 summary_df["Rank Best 6"] = summary_df["Avg best 6"].rank(ascending=False, method="min")
                 summary_df["Rank Worst"] = summary_df["Avg worst 6"].rank(ascending=False, method="min")
 
-                # Round numeric columns
-                for col in ["Average", "Avg best 6", "Avg worst 6"]:
-                    summary_df[col] = pd.to_numeric(summary_df[col], errors="coerce").round(2)
+                # ✅ Cast ranks to integers
+                rank_cols = ["Avg Rank", "Best Round Rank", "Worst Round Rank", "Rank Best 6", "Rank Worst"]
+                for col in rank_cols:
+                    summary_df[col] = summary_df[col].astype("Int64")
+
+                # ✅ Cast count columns to integers
+                count_cols = ["Times Played", "Best Round", "Worst Round", "Total Birdies", "Total Eagles", "Total Hats"]
+                for col in count_cols:
+                    summary_df[col] = summary_df[col].astype("Int64")
 
                 # Reorder
                 summary_df = summary_df.reset_index().rename(columns={"index": "Player"})
@@ -320,13 +326,29 @@ elif menu == "Summary":
                             return "background-color: #cd7f32; font-weight: bold"
                     return ""
 
-                styled_summary = summary_df.style.apply(
-                    lambda row: [highlight_ranks(v, c) for v, c in zip(row, summary_df.columns)], axis=1
-                ).format({
-                    "Average": "{:.2f}",
-                    "Avg best 6": "{:.2f}",
-                    "Avg worst 6": "{:.2f}"
-                })
+                # --- Styling ---
+                styled_summary = (
+                    summary_df.style
+                    .apply(lambda row: [highlight_ranks(v, c) for v, c in zip(row, summary_df.columns)], axis=1)
+                    .format({
+                        "Average": "{:.2f}",
+                        "Avg best 6": "{:.2f}",
+                        "Avg worst 6": "{:.2f}",
+                        # ✅ Integers
+                        "Times Played": "{:.0f}",
+                        "Best Round": "{:.0f}",
+                        "Worst Round": "{:.0f}",
+                        "Total Birdies": "{:.0f}",
+                        "Total Eagles": "{:.0f}",
+                        "Total Hats": "{:.0f}",
+                        "Avg Rank": "{:.0f}",
+                        "Best Round Rank": "{:.0f}",
+                        "Worst Round Rank": "{:.0f}",
+                        "Rank Best 6": "{:.0f}",
+                        "Rank Worst": "{:.0f}"
+                    })
+                    .to_html(escape=False)
+                )
 
                 st.dataframe(styled_summary, use_container_width=True)
 
