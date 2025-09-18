@@ -205,18 +205,16 @@ elif menu == "Scores by Day":
             st.markdown("### Eagles")
             st.dataframe(eagles_table.style.format(fmt_eag), use_container_width=True)
 
-elif menu == "Summary": 
+elif menu == "Summary":
     st.subheader("Player Summary")
     df = load_scores()
 
     if df.empty:
         st.info("No scores available yet.")
     else:
-        # --- Add filter date ---
+        # --- Date filter ---
         min_date = pd.to_datetime(df["round_date"]).min().date()
         start_date = st.date_input("📅 Only include scores after:", value=min_date, min_value=min_date)
-
-        # Filter data
         df = df[pd.to_datetime(df["round_date"]) >= pd.to_datetime(start_date)]
 
         if df.empty:
@@ -224,12 +222,8 @@ elif menu == "Summary":
         else:
             # --- Minimum rounds filter ---
             min_rounds = st.number_input("Minimum rounds required", min_value=1, max_value=20, value=6, step=1)
-
-            # Count rounds per player
             rounds_count = df.groupby("player")["round_date"].nunique().reset_index()
             rounds_count.columns = ["player", "rounds_played"]
-
-            # Keep only eligible players
             eligible_players = rounds_count[rounds_count["rounds_played"] >= min_rounds]["player"]
             df = df[df["player"].isin(eligible_players)]
 
@@ -239,12 +233,9 @@ elif menu == "Summary":
                 summary = {}
                 players = sorted(df["player"].unique())
 
-                # --- Find single latest hat-holder ---
-                hat_rounds = df[df["hat"] == True]
-                hat_holder = None
-                if not hat_rounds.empty:
-                    latest_hat = hat_rounds.loc[hat_rounds["round_date"].idxmax()]
-                    hat_holder = latest_hat["player"]
+                # 🔴 Find single latest hat-holder
+                latest_hat_row = df[df["hat"] == 1].sort_values("round_date").tail(1)
+                latest_hat_player = latest_hat_row["player"].iloc[0] if not latest_hat_row.empty else None
 
                 for player in players:
                     ps = df[df["player"] == player].sort_values("round_date")
@@ -252,32 +243,32 @@ elif menu == "Summary":
                     if times_played == 0:
                         continue
 
-                    # --- Last score, trend ---
+                    # Last score + trend
                     last_score = ps.iloc[-1]["score"]
-
                     if times_played > 1:
                         prev_score = ps.iloc[-2]["score"]
                         if last_score > prev_score:
-                            trend = "<span style='color:green'>▲</span>"
+                            trend = "▲"
                         elif last_score < prev_score:
-                            trend = "<span style='color:red'>▼</span>"
+                            trend = "▼"
                         else:
-                            trend = "<span style='color:grey'>→</span>"
+                            trend = "→"
                     else:
                         trend = ""
 
-                    # --- Add red cap only if this is the single latest hat-holder ---
+                    # Add red cap if this player is latest hat-holder
                     display_name = player
-                    if hat_holder == player:
-                        display_name += f" { hat_icon}"
+                    if player == latest_hat_player:
+                        display_name += f" {hat_icon}"
 
+                    # Averages
                     avg_score = ps["score"].mean()
                     best_round = ps["score"].max()
                     worst_round = ps["score"].min()
-                    best6 = ps["score"].nlargest(6).mean() if times_played >= 6 else ps["score"].mean()
-                    worst6 = ps["score"].nsmallest(6).mean() if times_played >= 6 else ps["score"].mean()
+                    best6 = ps["score"].nlargest(6).mean() if times_played >= 6 else avg_score
+                    worst6 = ps["score"].nsmallest(6).mean() if times_played >= 6 else avg_score
 
-                    # --- Birdies, Eagles, Hats totals ---
+                    # Totals
                     total_birdies = ps["birdies"].sum()
                     total_eagles = ps["eagles"].sum()
                     total_hats = ps["hat"].sum()
@@ -292,26 +283,23 @@ elif menu == "Summary":
                         "Avg worst 6": worst6,
                         "Total Birdies": total_birdies,
                         "Total Eagles": total_eagles,
-                        "Total Hats": total_hats
+                        "Total Hats": total_hats,
                     }
 
                 summary_df = pd.DataFrame(summary).T
 
-                # ---- ranks (Stableford: higher is better) ----
+                # --- Ranks (Stableford: higher is better) ---
                 summary_df["Avg Rank"] = summary_df["Average"].rank(ascending=False, method="min")
                 summary_df["Best Round Rank"] = summary_df["Best Round"].rank(ascending=False, method="min")
                 summary_df["Worst Round Rank"] = summary_df["Worst Round"].rank(ascending=False, method="min")
                 summary_df["Rank Best 6"] = summary_df["Avg best 6"].rank(ascending=False, method="min")
                 summary_df["Rank Worst"] = summary_df["Avg worst 6"].rank(ascending=False, method="min")
 
-                # ---- numeric formatting ----
+                # Round numeric columns
                 for col in ["Average", "Avg best 6", "Avg worst 6"]:
                     summary_df[col] = pd.to_numeric(summary_df[col], errors="coerce").round(2)
 
-                rank_cols = ["Avg Rank", "Best Round Rank", "Worst Round Rank", "Rank Best 6", "Rank Worst"]
-                for col in rank_cols:
-                    summary_df[col] = pd.to_numeric(summary_df[col], errors="coerce").astype("Int64")
-
+                # Reorder
                 summary_df = summary_df.reset_index().rename(columns={"index": "Player"})
                 cols_order = [
                     "Player", "Times Played", "Last Score", "Average", "Avg Rank",
@@ -321,24 +309,26 @@ elif menu == "Summary":
                 ]
                 summary_df = summary_df[cols_order]
 
-                styled_summary = (
-                    summary_df.style
-                    .apply(lambda row: [(v, col) for v, col in zip(row, summary_df.columns)], axis=1)
-                    .format({
-                        "Average": "{:.2f}",
-                        "Avg best 6": "{:.2f}",
-                        "Avg worst 6": "{:.2f}",
-                        "Avg Rank": "{:.0f}",
-                        "Best Round Rank": "{:.0f}",
-                        "Worst Round Rank": "{:.0f}",
-                        "Rank Best 6": "{:.0f}",
-                        "Rank Worst": "{:.0f}"
-                    })
-                    .to_html(escape=False)
-                )
+                # Highlight ranks
+                def highlight_ranks(val, col):
+                    if "Rank" in col:
+                        if val == 1:
+                            return "background-color: gold; font-weight: bold"
+                        elif val == 2:
+                            return "background-color: silver; font-weight: bold"
+                        elif val == 3:
+                            return "background-color: #cd7f32; font-weight: bold"
+                    return ""
 
-                st.markdown(f"<div style='overflow-x:auto; width:160%'>{styled_summary}</div>", unsafe_allow_html=True)
+                styled_summary = summary_df.style.apply(
+                    lambda row: [highlight_ranks(v, c) for v, c in zip(row, summary_df.columns)], axis=1
+                ).format({
+                    "Average": "{:.2f}",
+                    "Avg best 6": "{:.2f}",
+                    "Avg worst 6": "{:.2f}"
+                })
 
+                st.dataframe(styled_summary, use_container_width=True)
 
 # --- Add Round ---
 elif menu == "Add Round":
