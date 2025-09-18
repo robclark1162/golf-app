@@ -269,7 +269,7 @@ elif menu == "Summary":
                     # --- Add red cap only if this is the single latest hat-holder ---
                     display_name = player
                     if hat_holder == player:
-                        display_name += f" {hat_icon}"
+                        display_name += f" {hat}"
 
                     avg_score = ps["score"].mean()
                     best_round = ps["score"].max()
