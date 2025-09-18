@@ -122,7 +122,7 @@ def update_score(round_id, player_id, score, birdies, eagles, hat):
 
 # load red cap once at the top
 #redcap_base64 = get_base64_image("red_cap.png")
-hat_icon = f'<img src="data:image/png;base64,{redcap_base64}" width="20"/>'
+hat_icon = f'<img src="data:image/png" width="20"/>'
 # --- Streamlit UI ---
 st.title("🏌️ Golf Trwitchers Competition Tracker")
 
