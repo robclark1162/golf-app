@@ -326,31 +326,15 @@ elif menu == "Summary":
                             return "background-color: #cd7f32; font-weight: bold"
                     return ""
 
-                # --- Styling ---
-                styled_summary = (
-                    summary_df.style
-                    .apply(lambda row: [highlight_ranks(v, c) for v, c in zip(row, summary_df.columns)], axis=1)
-                    .format({
-                        "Average": "{:.2f}",
-                        "Avg best 6": "{:.2f}",
-                        "Avg worst 6": "{:.2f}",
-                        # ✅ Integers
-                        "Times Played": "{:.0f}",
-                        "Best Round": "{:.0f}",
-                        "Worst Round": "{:.0f}",
-                        "Total Birdies": "{:.0f}",
-                        "Total Eagles": "{:.0f}",
-                        "Total Hats": "{:.0f}",
-                        "Avg Rank": "{:.0f}",
-                        "Best Round Rank": "{:.0f}",
-                        "Worst Round Rank": "{:.0f}",
-                        "Rank Best 6": "{:.0f}",
-                        "Rank Worst": "{:.0f}"
-                    })
-                    .to_html(escape=False)
-                )
+                styled_summary = summary_df.style.apply(
+                    lambda row: [highlight_ranks(v, c) for v, c in zip(row, summary_df.columns)], axis=1
+                ).format({
+                    "Average": "{:.2f}",
+                    "Avg best 6": "{:.2f}",
+                    "Avg worst 6": "{:.2f}"
+                })
 
-  #              st.dataframe(styled_summary, use_container_width=True)
+                st.dataframe(styled_summary, use_container_width=True)
 
 # --- Add Round ---
 elif menu == "Add Round":
