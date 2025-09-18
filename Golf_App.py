@@ -3,6 +3,16 @@ import pandas as pd
 from datetime import date
 from supabase import create_client, Client
 import os
+import base64
+
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# Load once at top
+redcap_base64 = get_base64_image("red_cap.png")
+hat_icon = f'<img src="data:image/png;base64,{redcap_base64}" width="20"/>'
+
 
 # --- Supabase Connection ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://aqaiziylxougtlaihlor.supabase.co")
