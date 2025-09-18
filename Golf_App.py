@@ -350,7 +350,7 @@ elif menu == "Summary":
                     .to_html(escape=False)
                 )
 
-                st.dataframe(styled_summary, use_container_width=True)
+  #              st.dataframe(styled_summary, use_container_width=True)
 
 # --- Add Round ---
 elif menu == "Add Round":
