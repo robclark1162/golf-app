@@ -352,7 +352,7 @@ elif menu == "Summary":
                     .to_html(escape=False)
                 )
 
-                st.dataframe(styled_summary, use_container_width=True)
+                st.markdown(f"<div style='overflow-x:auto; width:160%'>{styled_summary}</div>", unsafe_allow_html=True)
 
 # --- Add Round ---
 elif menu == "Add Round":
