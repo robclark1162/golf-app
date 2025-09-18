@@ -1,15 +1,119 @@
 import streamlit as st
 import pandas as pd
-import sqlite3
 from datetime import date
+from supabase import create_client, Client
+import os
 
-def get_connection(db_path="Golf_comp.db"):
-    return sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+# --- Supabase Connection ---
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://your-project.supabase.co")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "your-anon-key")
 
-#DB_FILE = "C:\\Users\\robcl\\OneDrive\\Apps\\Golf App\\Golf_comp.db"
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-import base64
+# --- DB Helpers (Supabase) ---
+def load_players():
+    response = supabase.table("players").select("player_id, name").order("name").execute()
+    return pd.DataFrame(response.data)
 
+
+def insert_player(name: str):
+    supabase.table("players").insert({"name": name}).execute()
+
+
+def delete_player(player_id: int):
+    supabase.table("players").delete().eq("player_id", player_id).execute()
+
+
+def load_courses():
+    response = supabase.table("courses").select("course_id, name").order("name").execute()
+    return pd.DataFrame(response.data)
+
+
+def insert_course(name: str):
+    supabase.table("courses").insert({"name": name}).execute()
+
+
+def delete_course(course_id: int):
+    supabase.table("courses").delete().eq("course_id", course_id).execute()
+
+
+def load_scores():
+    response = supabase.table("scores").select(
+        """
+        score_id,
+        score,
+        birdies,
+        eagles,
+        hat,
+        players ( player_id, name ),
+        rounds ( round_id, round_date, courses ( course_id, name ) )
+        """
+    ).execute()
+
+    df = pd.DataFrame(response.data)
+
+    if df.empty:
+        return df
+
+    # Flatten nested JSON
+    df["player_id"] = df["players"].apply(lambda x: x["player_id"] if x else None)
+    df["player"] = df["players"].apply(lambda x: x["name"] if x else None)
+    df["round_id"] = df["rounds"].apply(lambda x: x["round_id"] if x else None)
+    df["round_date"] = df["rounds"].apply(lambda x: x["round_date"] if x else None)
+    df["course_id"] = df["rounds"].apply(lambda x: x["courses"]["course_id"] if x and x["courses"] else None)
+    df["course"] = df["rounds"].apply(lambda x: x["courses"]["name"] if x and x["courses"] else None)
+
+    # Drop nested objects
+    df = df.drop(columns=["players", "rounds"])
+
+    return df[
+        ["round_id", "round_date", "course", "player_id", "player", "score", "birdies", "eagles", "hat"]
+    ]
+
+
+def insert_round(round_date, course_id, scores):
+    # Insert round
+    round_resp = supabase.table("rounds").insert(
+        {"round_date": str(round_date), "course_id": course_id}
+    ).execute()
+
+    if not round_resp.data:
+        return
+    round_id = round_resp.data[0]["round_id"]
+
+    # Insert scores
+    score_rows = []
+    for player_id, (score, birdies, eagles, hat) in scores.items():
+        if score is not None:
+            score_rows.append({
+                "round_id": round_id,
+                "player_id": player_id,
+                "score": score,
+                "birdies": birdies,
+                "eagles": eagles,
+                "hat": hat,
+            })
+    if score_rows:
+        supabase.table("scores").insert(score_rows).execute()
+
+
+def update_score(round_id, player_id, score, birdies, eagles, hat):
+    supabase.table("scores").update({
+        "score": score,
+        "birdies": birdies,
+        "eagles": eagles,
+        "hat": hat
+    }).eq("round_id", round_id).eq("player_id", player_id).execute()
+
+
+# --- Streamlit UI Placeholder (rest of your Golf_App.py UI remains unchanged) ---
+st.title("🏌️ Golf Twitchers Competition Tracker (Supabase)")
+
+menu = st.sidebar.radio("Menu", ["View Scores", "Summary", "Scores by Day", "Add Round", "Edit Round", "Manage Players", "Manage Courses"])
+
+# The rest of your UI code (summary, add/edit round, etc.) will continue to work with these new Supabase helpers.
+
+# --- Cap code
 # --- helper: convert image to base64 ---
 def get_base64_image(image_path):
     with open(image_path, "rb") as f:
@@ -19,126 +123,6 @@ def get_base64_image(image_path):
 # load red cap once at the top
 redcap_base64 = get_base64_image("red_cap.png")
 hat_icon = f'<img src="data:image/png;base64,{redcap_base64}" width="20"/>'
-
-# --- DB Helpers ---
-def get_connection():
-    return sqlite3.connect(DB_FILE, check_same_thread=False)
-def insert_player(name: str):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("INSERT INTO players (name) VALUES (?)", (name,))
-    conn.commit()
-    conn.close()
-
-def delete_player(player_id: int):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM players WHERE player_id = ?", (player_id,))
-    conn.commit()
-    conn.close()
-
-def insert_course(name: str):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("INSERT INTO courses (name) VALUES (?)", (name,))
-    conn.commit()
-    conn.close()
-
-def delete_course(course_id: int):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM courses WHERE course_id = ?", (course_id,))
-    conn.commit()
-    conn.close()
-
-def load_players():
-    conn = get_connection()
-    df = pd.read_sql("SELECT player_id, name FROM players ORDER BY name", conn)
-    conn.close()
-    return df
-
-
-def load_courses():
-    conn = get_connection()
-    df = pd.read_sql("SELECT course_id, name FROM courses ORDER BY name", conn)
-    conn.close()
-    return df
-
-def load_scores():
-    with get_connection() as conn:
-        df = pd.read_sql(query, conn)
-
-    conn = get_connection()
-
-    query = """
-    SELECT r.round_id, r.round_date, c.name AS course, 
-           p.player_id, p.name AS player, s.score, s.birdies, s.eagles, s.hat
-    FROM scores s
-    JOIN rounds r ON s.round_id = r.round_id
-    JOIN players p ON s.player_id = p.player_id
-    JOIN courses c ON r.course_id = c.course_id
-    ORDER BY r.round_date DESC, c.name, p.name
-    """
-    df = pd.read_sql(query, conn)
-    conn.close()
-    return df
-
-def insert_round(round_date, course_id, scores):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute(
-        "INSERT INTO rounds (round_date, course_id) VALUES (?, ?)",
-        (round_date, course_id)
-    )
-    round_id = cur.lastrowid
-
-    for player_id, data in scores.items():
-        score, birdies, eagles, hat = data
-        if score is not None:
-            cur.execute(
-                "INSERT INTO scores (round_id, player_id, score, birdies, eagles, hat) VALUES (?, ?, ?, ?, ?, ?)",
-                (round_id, player_id, score, birdies, eagles, hat)
-            )
-
-    conn.commit()
-    conn.close()
-
-def update_score(round_id, player_id, score, birdies, eagles, hat):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute(
-        """UPDATE scores 
-           SET score = ?, birdies = ?, eagles = ?, hat = ?
-           WHERE round_id = ? AND player_id = ?""",
-        (score, birdies, eagles, hat, round_id, player_id)
-    )
-    conn.commit()
-    conn.close()
-# -------------------------
-# helper: highlight function (define this once at top of file)
-# -------------------------
-def highlight_ranks(val, col_name):
-    """
-    Return CSS style for rank columns. Safe if val is non-numeric.
-    """
-    if pd.isna(val):
-        return ""
-    try:
-        # Only style columns that are ranks
-        if "Rank" in col_name:
-            v = int(val)
-            if v == 1:
-                return "background-color: yellow; font-weight: bold;"
-            elif v <= 3:
-                return "background-color: orange;"
-            else:
-                return "background-color: lightgrey;"
-    except Exception:
-        # if conversion fails, return no style
-        return ""
-    return ""
-
 # --- Streamlit UI ---
 st.title("🏌️ Golf Trwitchers Competition Tracker")
 
