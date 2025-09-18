@@ -5,8 +5,8 @@ from supabase import create_client, Client
 import os
 
 # --- Supabase Connection ---
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://your-project.supabase.co")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "your-anon-key")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://aqaiziylxougtlaihlor.supabase.co")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxYWl6aXlseG91Z3RsYWlobG9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjk1NTMsImV4cCI6MjA3Mzc0NTU1M30.kqhyv4WIFw0SQUoNocX_8TNXouVm4XUzIGO2FY0nhVY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
