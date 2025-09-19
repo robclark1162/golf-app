@@ -116,6 +116,8 @@ def update_score(round_id, player_id, score, birdies, eagles, hat):
     }).eq("round_id", round_id).eq("player_id", player_id).execute()
 
 
+
+# --- Streamlit UI ---
 # --- Authentication state ---
 if "user" not in st.session_state:
     st.session_state["user"] = None
