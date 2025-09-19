@@ -50,7 +50,6 @@ def delete_course(course_id: int):
 def load_scores():
     response = supabase.table("scores").select(
         """
-        score_id,
         score,
         birdies,
         eagles,
