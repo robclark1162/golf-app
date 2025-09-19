@@ -354,7 +354,9 @@ elif menu == "Summary":
                     summary_df[col] = summary_df[col].astype("Int64")
 
                 # Reorder
-                summary_df = summary_df.reset_index().rename(columns={"index": "Player"})
+               # summary_df = summary_df.reset_index().rename(columns={"index": "Player"})
+                summary_df.index.name = "Player"
+                summary_df = summary_df.reset_index()  # keep "Player" as a column
                 cols_order = [
                     "Player", "Times Played", "Last Score", "Average", "Avg Rank",
                     "Best Round", "Best Round Rank", "Worst Round", "Worst Round Rank",
@@ -397,7 +399,7 @@ styled_summary = (
         "Rank Best 6": "{:.0f}",
         "Rank Worst": "{:.0f}"
     })
-    .hide(axis="index")   # 👈 hides row numbers
+    .hide(axis="index")   # now this will remove the 0..n row numbers
 )
 
 # Show as styled HTML table (with scroll if wide)
