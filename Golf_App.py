@@ -182,7 +182,9 @@ else:
 if menu == "View Scores":
     st.subheader("All Scores")
     df = load_scores()
-    st.dataframe(df, df.reset_index(drop=True), width= 'content')
+    st.dataframe(df, width= 'content')
+    st.dataframe(df.reset_index(drop=True))
+
 
     st.subheader("Average Scores by Player")
     avg_df = df.groupby("player")["score"].mean().reset_index()
