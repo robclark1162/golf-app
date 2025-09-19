@@ -116,7 +116,6 @@ def update_score(round_id, player_id, score, birdies, eagles, hat):
 
 
 
-# --- Streamlit UI ---
 # --- Authentication state ---
 if "user" not in st.session_state:
     st.session_state["user"] = None
@@ -124,37 +123,39 @@ if "user" not in st.session_state:
 st.title("🏌️ Golf Twitchers Competition Tracker")
 
 if st.session_state["user"] is None:
+    # --- Login form ---
     st.subheader("🔑 Login")
 
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
 
-if st.button("Login"):
-    try:
-        res = supabase.auth.sign_in_with_password({"email": email, "password": password})
-        if res.user is not None:
-            st.session_state["user"] = res.user
-            st.success(f"✅ Welcome {res.user.email}")
-            st.experimental_rerun()
-        else:
-            st.error("❌ Invalid credentials")
-    except Exception as e:
-        st.error(f"❌ Login failed: {str(e)}")
+    if st.button("Login"):
+        try:
+            res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            if res.user is not None:
+                # ✅ Store just the email string
+                st.session_state["user"] = res.user.email
+                st.success(f"✅ Welcome {st.session_state['user']}")
+                st.experimental_rerun()
+            else:
+                st.error("❌ Invalid credentials")
+        except Exception as e:
+            st.error(f"❌ Login failed: {str(e)}")
 
+    st.stop()  # ⛔ stop app until logged in
 
-    st.stop()  # prevent rest of app loading
 else:
-    st.sidebar.success(f"Logged in as {st.session_state['user'].email}")
+    # --- Sidebar user info + logout ---
+    st.sidebar.success(f"Logged in as {st.session_state['user']}")
     if st.sidebar.button("Logout"):
         st.session_state["user"] = None
         st.experimental_rerun()
 
-
-menu = st.sidebar.radio(
-    "Menu",
-    ["View Scores", "Summary", "Scores by Day", "Add Round", "Edit Round", "Manage Players", "Manage Courses"]
-)
-
+    # --- App Menu (only after login) ---
+    menu = st.sidebar.radio(
+        "Menu",
+        ["View Scores", "Summary", "Scores by Day", "Add Round", "Edit Round", "Manage Players", "Manage Courses"]
+    )
 
 # --- View Scores ---
 if menu == "View Scores":
