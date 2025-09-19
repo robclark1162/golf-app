@@ -5,6 +5,13 @@ from supabase import create_client, Client
 import os
 import base64
 
+if "user" not in st.session_state:
+    st.session_state["user"] = None
+if "access_token" not in st.session_state:
+    st.session_state["access_token"] = None
+if "refresh_token" not in st.session_state:
+    st.session_state["refresh_token"] = None
+
 def get_base64_image(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
@@ -19,6 +26,16 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://aqaiziylxougtlaihlor.supa
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxYWl6aXlseG91Z3RsYWlobG9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjk1NTMsImV4cCI6MjA3Mzc0NTU1M30.kqhyv4WIFw0SQUoNocX_8TNXouVm4XUzIGO2FY0nhVY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Try to restore session if logged in previously
+if st.session_state["refresh_token"] and not st.session_state["user"]:
+    try:
+        session = supabase.auth.refresh_session(refresh_token=st.session_state["refresh_token"])
+        if session and session.user:
+            st.session_state["user"] = session.user.email
+            st.session_state["access_token"] = session.session.access_token
+            st.session_state["refresh_token"] = session.session.refresh_token
+    except Exception:
+        pass  # token may have expired, user must log in again
 
 # --- DB Helpers (Supabase) ---
 def load_players():
@@ -123,7 +140,6 @@ if "user" not in st.session_state:
 st.title("🏌️ Golf Twitchers Competition Tracker")
 
 if st.session_state["user"] is None:
-    # --- Login form ---
     st.subheader("🔑 Login")
 
     email = st.text_input("Email")
@@ -133,8 +149,11 @@ if st.session_state["user"] is None:
         try:
             res = supabase.auth.sign_in_with_password({"email": email, "password": password})
             if res.user is not None:
-                # ✅ Store just the email string
+                # ✅ Store tokens & email
                 st.session_state["user"] = res.user.email
+                st.session_state["access_token"] = res.session.access_token
+                st.session_state["refresh_token"] = res.session.refresh_token
+
                 st.success(f"✅ Welcome {st.session_state['user']}")
                 st.rerun()
             else:
@@ -149,6 +168,8 @@ else:
     st.sidebar.success(f"Logged in as {st.session_state['user']}")
     if st.sidebar.button("Logout"):
         st.session_state["user"] = None
+        st.session_state["access_token"] = None
+        st.session_state["refresh_token"] = None
         st.rerun()
 
     # --- App Menu (only after login) ---
