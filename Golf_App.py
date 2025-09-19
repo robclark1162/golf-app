@@ -251,7 +251,7 @@ elif menu == "Scores by Day":
             st.dataframe(birdies_table.reset_index(drop=True), use_container_width=True)
 
             st.markdown("### Eagles")
-            st.dataframe(eagles_table.reset_index(drop=True), use_container_width=True)
+            st.dataframe(eagles_table.style.format(fmt_eag), use_container_width=True)
 
 elif menu == "Summary":
     st.subheader("Player Summary")
