@@ -222,6 +222,7 @@ elif menu == "Scores by Day":
 
             fmt_scores = {c: "{:.0f}" for c in player_cols}
             st.dataframe(scores_pivot.style.format(fmt_scores), use_container_width=True)
+            st.dataframe(df.reset_index(drop=True))
 
             # Birdies/Eagles
             birds_eags = df.melt(
