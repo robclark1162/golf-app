@@ -453,9 +453,6 @@ elif menu == "Add Round":
         insert_round(round_date, course_id, scores)
         st.success("✅ Round saved!")
 
-if st.button("Save Round"):
-    insert_round(round_date, course_id, scores)
-    st.success("✅ Round saved!")
  
     # --- Edit Round ---
 elif menu == "Edit Round":
