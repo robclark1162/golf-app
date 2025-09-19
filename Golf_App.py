@@ -221,7 +221,7 @@ elif menu == "Scores by Day":
             scores_pivot = scores_pivot[cols]
 
             fmt_scores = {c: "{:.0f}" for c in player_cols}
-            st.dataframe(scores_pivot.style.format(fmt_scores), use_container_width=True)
+            st.dataframe(scores_pivot.reset_index(drop=True), use_container_width=True)
 
             # Birdies/Eagles
             birds_eags = df.melt(
@@ -248,10 +248,10 @@ elif menu == "Scores by Day":
             fmt_eag  = {c: "{:.0f}" for c in pcols_eagle}
 
             st.markdown("### Birdies")
-            st.dataframe(birdies_table.style.format(fmt_bird), use_container_width=True)
+            st.dataframe(birdies_table.reset_index(drop=True), use_container_width=True)
 
             st.markdown("### Eagles")
-            st.dataframe(eagles_table.style.format(fmt_eag), use_container_width=True)
+            st.dataframe(eagles_table.reset_index(drop=True), use_container_width=True)
 
 elif menu == "Summary":
     st.subheader("Player Summary")
@@ -377,30 +377,35 @@ elif menu == "Summary":
 
 
                 # --- Styling ---
-                styled_summary = (
-                    summary_df.style
-                    .apply(lambda row: [highlight_ranks(v, c) for v, c in zip(row, summary_df.columns)], axis=1)
-                    .format({
-                        "Average": "{:.2f}",
-                        "Avg best 6": "{:.2f}",
-                        "Avg worst 6": "{:.2f}",
-                        # ✅ Integers
-                        "Times Played": "{:.0f}",
-                        "Best Round": "{:.0f}",
-                        "Worst Round": "{:.0f}",
-                        "Total Birdies": "{:.0f}",
-                        "Total Eagles": "{:.0f}",
-                        "Total Hats": "{:.0f}",
-                        "Avg Rank": "{:.0f}",
-                        "Best Round Rank": "{:.0f}",
-                        "Worst Round Rank": "{:.0f}",
-                        "Rank Best 6": "{:.0f}",
-                        "Rank Worst": "{:.0f}"
-                    })
-                    .to_html(escape=False)
-                )
+styled_summary = (
+    summary_df.style
+    .apply(lambda row: [highlight_ranks(v, c) for v, c in zip(row, summary_df.columns)], axis=1)
+    .format({
+        "Average": "{:.2f}",
+        "Avg best 6": "{:.2f}",
+        "Avg worst 6": "{:.2f}",
+        # ✅ Integers
+        "Times Played": "{:.0f}",
+        "Best Round": "{:.0f}",
+        "Worst Round": "{:.0f}",
+        "Total Birdies": "{:.0f}",
+        "Total Eagles": "{:.0f}",
+        "Total Hats": "{:.0f}",
+        "Avg Rank": "{:.0f}",
+        "Best Round Rank": "{:.0f}",
+        "Worst Round Rank": "{:.0f}",
+        "Rank Best 6": "{:.0f}",
+        "Rank Worst": "{:.0f}"
+    })
+    .hide(axis="index")   # 👈 hides row numbers
+)
 
-                st.markdown(f"<div style='overflow-x:auto; width:160%'>{styled_summary}</div>", unsafe_allow_html=True)
+# Show as styled HTML table (with scroll if wide)
+st.markdown(
+    f"<div style='overflow-x:auto; width:160%'>{styled_summary.to_html(escape=False)}</div>",
+    unsafe_allow_html=True
+)
+
 
 # --- Add Round ---
 elif menu == "Add Round":
