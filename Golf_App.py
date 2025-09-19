@@ -128,17 +128,18 @@ if st.session_state["user"] is None:
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
 
-    if st.button("Login"):
-        try:
-            res = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            if res.user:
-                st.session_state["user"] = res.user
-                st.success(f"✅ Welcome {res.user.email}")
-                st.experimental_rerun()
-            else:
-                st.error("❌ Invalid credentials")
-        except Exception as e:
-            st.error("❌ Login failed")
+if st.button("Login"):
+    try:
+        res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        if res.user is not None:
+            st.session_state["user"] = res.user
+            st.success(f"✅ Welcome {res.user.email}")
+            st.experimental_rerun()
+        else:
+            st.error("❌ Invalid credentials")
+    except Exception as e:
+        st.error(f"❌ Login failed: {str(e)}")
+
 
     st.stop()  # prevent rest of app loading
 else:
