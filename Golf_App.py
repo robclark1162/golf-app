@@ -182,8 +182,8 @@ else:
 if menu == "View Scores":
     st.subheader("All Scores")
     df = load_scores()
-    st.dataframe(df, width= 'content')
-    st.dataframe(df.reset_index(drop=True))
+    display_df = df.drop(columns=["player_id", "course_id", "round_id", "score_id"], errors="ignore")
+    st.dataframe(display_df.reset_index(drop=True), use_container_width=True)
 
 
     st.subheader("Average Scores by Player")
@@ -222,7 +222,6 @@ elif menu == "Scores by Day":
 
             fmt_scores = {c: "{:.0f}" for c in player_cols}
             st.dataframe(scores_pivot.style.format(fmt_scores), use_container_width=True)
-            st.dataframe(df.reset_index(drop=True))
 
             # Birdies/Eagles
             birds_eags = df.melt(
