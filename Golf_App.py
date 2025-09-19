@@ -412,41 +412,46 @@ elif menu == "Add Round":
     course_id = int(courses[courses["name"] == course]["course_id"].iloc[0])
 
     players = load_players()
-   # st.write("DEBUG players:", type(players))
-    #st.write(players.head())
     scores = {}
 
     st.markdown("### Enter Scores")
 
     for _, row in players.iterrows():
-        st.markdown(f"**{row['name']}**")
-        col1, col2, col3, col4 = st.columns([2, 1, 1, 1])  # adjust widths
+        # Create 5 columns: Player name + 4 inputs
+        col0, col1, col2, col3, col4 = st.columns([2, 2, 1, 1, 1])  
+
+        with col0:
+            st.markdown(f"**{row['name']}**")  # player name in leftmost col
 
         with col1:
             score = st.number_input(
                 "Score",
                 min_value=0, max_value=200, step=1, format="%d",
                 value=None, key=f"score_new_{row['player_id']}"
-        )
+            )
         with col2:
             birdies = st.number_input(
                 "Birdies",
                 min_value=0, max_value=18, step=1, format="%d",
                 value=0, key=f"birdies_new_{row['player_id']}"
-        )
+            )
         with col3:
             eagles = st.number_input(
                 "Eagles",
                 min_value=0, max_value=18, step=1, format="%d",
                 value=0, key=f"eagles_new_{row['player_id']}"
-        )
+            )
         with col4:
             hat = st.checkbox(
                 "Hat",
-            value=False, key=f"hat_new_{row['player_id']}"
-        )
+                value=False, key=f"hat_new_{row['player_id']}"
+            )
 
-    scores[row["player_id"]] = (score, birdies, eagles, hat)
+        scores[row["player_id"]] = (score, birdies, eagles, hat)
+
+    if st.button("Save Round"):
+        insert_round(round_date, course_id, scores)
+        st.success("✅ Round saved!")
 
 if st.button("Save Round"):
     insert_round(round_date, course_id, scores)
