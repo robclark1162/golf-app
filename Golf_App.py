@@ -399,7 +399,7 @@ styled_summary = (
         "Rank Best 6": "{:.0f}",
         "Rank Worst": "{:.0f}"
     })
-    .hide(axis="index")   # now this will remove the 0..n row numbers
+    .hide(axis="index")   # 👈 hides row numbers
 )
 
 # Show as styled HTML table (with scroll if wide)
