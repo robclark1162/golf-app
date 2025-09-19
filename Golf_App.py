@@ -136,7 +136,7 @@ if st.session_state["user"] is None:
                 # ✅ Store just the email string
                 st.session_state["user"] = res.user.email
                 st.success(f"✅ Welcome {st.session_state['user']}")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("❌ Invalid credentials")
         except Exception as e:
@@ -149,7 +149,7 @@ else:
     st.sidebar.success(f"Logged in as {st.session_state['user']}")
     if st.sidebar.button("Logout"):
         st.session_state["user"] = None
-        st.experimental_rerun()
+        st.rerun()
 
     # --- App Menu (only after login) ---
     menu = st.sidebar.radio(
@@ -492,7 +492,7 @@ elif menu == "Manage Players":
         if new_player.strip():
             insert_player(new_player.strip())
             st.success(f"✅ Player '{new_player}' added!")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.warning("Please enter a valid name.")
 
@@ -506,7 +506,7 @@ elif menu == "Manage Players":
             if col2.button("❌ Delete", key=f"del_player_{row['player_id']}"):
                 delete_player(row["player_id"])
                 st.success(f"🗑️ Player '{row['name']}' deleted.")
-                st.experimental_rerun()
+                st.rerun()
     else:
         st.info("No players found.")
 elif menu == "Manage Courses":
@@ -518,7 +518,7 @@ elif menu == "Manage Courses":
         if new_course.strip():
             insert_course(new_course.strip())
             st.success(f"✅ Course '{new_course}' added!")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.warning("Please enter a valid course name.")
 
@@ -532,6 +532,6 @@ elif menu == "Manage Courses":
             if col2.button("❌ Delete", key=f"del_course_{row['course_id']}"):
                 delete_course(row["course_id"])
                 st.success(f"🗑️ Course '{row['name']}' deleted.")
-                st.experimental_rerun()
+                st.rerun()
     else:
         st.info("No courses found.")
