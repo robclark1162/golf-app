@@ -420,9 +420,10 @@ elif menu == "Summary":
                                 )
                                 .properties(title=f"{player} Scores Over Time", height=300)
                             )
-                            st.altair_chart(chart, use_container_width=True)
+                            st.altair_chart(chart, use_container_width=True)  # ✅ will render properly now
                         else:
                             st.info("No scores available for this player.")
+
 
 # --- Add Round ---
 elif menu == "Add Round":
