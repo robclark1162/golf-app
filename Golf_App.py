@@ -5,6 +5,7 @@ from supabase import create_client, Client
 import os
 import base64
 import altair as alt
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
 if "user" not in st.session_state:
     st.session_state["user"] = None
@@ -261,170 +262,90 @@ elif menu == "Summary":
     if df.empty:
         st.info("No scores available yet.")
     else:
-        # --- Date filter ---
-        min_date = pd.to_datetime(df["round_date"]).min().date()
-        start_date = st.date_input("📅 Only include scores after:", value=min_date, min_value=min_date)
-        df = df[pd.to_datetime(df["round_date"]) >= pd.to_datetime(start_date)]
+        # Build summary dataframe
+        summary_df = (
+            df.groupby("player")
+            .agg(
+                Rounds=("score", "count"),
+                Average=("score", "mean"),
+                Best=("score", "min"),
+                Last=("score", "last")
+            )
+            .reset_index()
+        )
 
-        if df.empty:
-            st.warning("No scores found after selected date.")
-        else:
-            # --- Minimum rounds filter ---
-            min_rounds = st.number_input("Minimum rounds required", min_value=1, max_value=20, value=6, step=1)
-            rounds_count = df.groupby("player")["round_date"].nunique().reset_index()
-            rounds_count.columns = ["player", "rounds_played"]
-            eligible_players = rounds_count[rounds_count["rounds_played"] >= min_rounds]["player"]
-            df = df[df["player"].isin(eligible_players)]
+        # Round Average
+        summary_df["Average"] = summary_df["Average"].round(1)
 
-            if df.empty:
-                st.warning(f"No players found with at least {min_rounds} rounds after {start_date}.")
-            else:
-                summary = {}
-                players = sorted(df["player"].unique())
+        # Rankings
+        summary_df = summary_df.sort_values("Average").reset_index(drop=True)
+        summary_df.index += 1
+        summary_df.insert(0, "Rank", summary_df.index)
 
-                # 🔴 Find single latest hat-holder
-                latest_hat_row = df[df["hat"] == 1].sort_values("round_date").tail(1)
-                latest_hat_player = latest_hat_row["player"].iloc[0] if not latest_hat_row.empty else None
+        # Rank emojis
+        summary_df["Rank"] = summary_df["Rank"].astype(str)
+        if len(summary_df) > 0: summary_df.loc[0, "Rank"] = "🥇"
+        if len(summary_df) > 1: summary_df.loc[1, "Rank"] = "🥈"
+        if len(summary_df) > 2: summary_df.loc[2, "Rank"] = "🥉"
 
-                for player in players:
-                    ps = df[df["player"] == player].sort_values("round_date")
-                    times_played = len(ps)
-                    if times_played == 0:
-                        continue
+        # Identify latest hat-holder
+        latest_round = df["round_date"].max()
+        hat_holder = None
+        if not pd.isnull(latest_round):
+            latest_scores = df[df["round_date"] == latest_round]
+            if not latest_scores.empty:
+                hat_holder = latest_scores.loc[latest_scores["score"].idxmin(), "player"]
 
-                    # Last score + trend
-                    last_score = ps.iloc[-1]["score"]
-                    if times_played > 1:
-                        prev_score = ps.iloc[-2]["score"]
-                        if last_score > prev_score:
-                            trend = "▲"
-                        elif last_score < prev_score:
-                            trend = "▼"
-                        else:
-                            trend = "→"
-                    else:
-                        trend = ""
+        # Player display column
+        summary_df["Player Display"] = summary_df["player"].apply(
+            lambda p: f"{p} 🧢" if p == hat_holder else p
+        )
 
-                    # Add red cap if this player is latest hat-holder
-                    display_name = player
-                    if player == latest_hat_player:
-                        display_name += f" {hat_icon}"
+        # Reorder columns
+        summary_df = summary_df[
+            ["Rank", "Player Display", "Rounds", "Average", "Best", "Last"]
+        ]
 
-                    # Averages
-                    avg_score = ps["score"].mean()
-                    best_round = ps["score"].max()
-                    worst_round = ps["score"].min()
-                    best6 = ps["score"].nlargest(6).mean() if times_played >= 6 else avg_score
-                    worst6 = ps["score"].nsmallest(6).mean() if times_played >= 6 else avg_score
+        # AgGrid interactive table
+        gb = GridOptionsBuilder.from_dataframe(summary_df)
+        gb.configure_selection("single")  # select one player at a time
+        gb.configure_pagination(paginationAutoPageSize=True)
+        gb.configure_default_column(resizable=True, filter=True, sortable=True)
 
-                    # Totals
-                    total_birdies = ps["birdies"].sum()
-                    total_eagles = ps["eagles"].sum()
-                    total_hats = ps["hat"].sum()
+        grid_options = gb.build()
 
-                    summary[display_name] = {
-                        "Times Played": times_played,
-                        "Last Score": f"{int(last_score)} {trend}",
-                        "Average": avg_score,
-                        "Best Round": int(best_round),
-                        "Worst Round": int(worst_round),
-                        "Avg best 6": best6,
-                        "Avg worst 6": worst6,
-                        "Total Birdies": total_birdies,
-                        "Total Eagles": total_eagles,
-                        "Total Hats": total_hats,
-                    }
+        st.markdown("👉 Click a row to view the player's score trend")
+        grid_response = AgGrid(
+            summary_df,
+            gridOptions=grid_options,
+            update_mode=GridUpdateMode.SELECTION_CHANGED,
+            height=400,
+            fit_columns_on_grid_load=True,
+            allow_unsafe_jscode=True
+        )
 
-                summary_df = pd.DataFrame(summary).T
+        selected = grid_response["selected_rows"]
 
-# --- Ranks (Stableford: higher is better) ---
-                summary_df["Avg Rank"] = summary_df["Average"].rank(ascending=False, method="min")
-                summary_df["Best Round Rank"] = summary_df["Best Round"].rank(ascending=False, method="min")
-                summary_df["Worst Round Rank"] = summary_df["Worst Round"].rank(ascending=True, method="min")
-                summary_df["Rank Best 6"] = summary_df["Avg best 6"].rank(ascending=False, method="min")
-                summary_df["Rank Worst"] = summary_df["Avg worst 6"].rank(ascending=True, method="min")
+        if selected:
+            player = selected[0]["Player Display"].replace("🧢", "").strip()
+            st.subheader(f"📊 {player}'s Score Trend")
 
-                # ✅ Cast ranks to integers
-                rank_cols = ["Avg Rank", "Best Round Rank", "Worst Round Rank", "Rank Best 6", "Rank Worst"]
-                for col in rank_cols:
-                    summary_df[col] = summary_df[col].astype("Int64")
+            player_scores = df[df["player"] == player][["round_date", "score"]]
 
-                # ✅ Cast count columns to integers
-                count_cols = ["Times Played", "Best Round", "Worst Round", "Total Birdies", "Total Eagles", "Total Hats"]
-                for col in count_cols:
-                    summary_df[col] = summary_df[col].astype("Int64")
-
-                # Reorder
-                summary_df = summary_df.reset_index().rename(columns={"index": "Player"})
-                cols_order = [
-                    "Player", "Times Played", "Last Score", "Average", "Avg Rank",
-                    "Best Round", "Best Round Rank", "Worst Round", "Worst Round Rank",
-                    "Avg best 6", "Rank Best 6", "Avg worst 6", "Rank Worst",
-                    "Total Birdies", "Total Eagles", "Total Hats"
-                ]
-                summary_df = summary_df[cols_order]
-
-                # Highlight ranks
-                def highlight_ranks(val, col):
-                    if "Rank" in col:
-                        if val == 1:
-                            return "background-color: gold; font-weight: bold"
-                        elif val == 2:
-                            return "background-color: silver; font-weight: bold"
-                        elif val == 3:
-                            return "background-color: #cd7f32; font-weight: bold"
-                    return ""
-
-
-
-                # --- Styling ---
-                styled_summary = (
-                    summary_df.style
-                    .apply(lambda row: [highlight_ranks(v, c) for v, c in zip(row, summary_df.columns)], axis=1)
-                    .format({
-                        "Average": "{:.2f}",
-                        "Avg best 6": "{:.2f}",
-                        "Avg worst 6": "{:.2f}",
-                        # ✅ Integers
-                        "Times Played": "{:.0f}",
-                        "Best Round": "{:.0f}",
-                        "Worst Round": "{:.0f}",
-                        "Total Birdies": "{:.0f}",
-                        "Total Eagles": "{:.0f}",
-                        "Total Hats": "{:.0f}",
-                        "Avg Rank": "{:.0f}",
-                        "Best Round Rank": "{:.0f}",
-                        "Worst Round Rank": "{:.0f}",
-                        "Rank Best 6": "{:.0f}",
-                        "Rank Worst": "{:.0f}"
-                    })
-                    .to_html(escape=False)
+            if not player_scores.empty:
+                chart = (
+                    alt.Chart(player_scores)
+                    .mark_line(point=True)
+                    .encode(
+                        x="round_date:T",
+                        y="score:Q",
+                        tooltip=["round_date:T", "score:Q"]
+                    )
+                    .properties(height=300)
                 )
-
-                st.markdown(f"<div style='overflow-x:auto; width:160%'>{styled_summary}</div>", unsafe_allow_html=True)
-                # --- Add per-player charts ---
-                st.subheader("📊 Player Score Trends")
-
-                for player in summary_df["Player"]:
-                    if st.button(f"Show {player}'s scores", key=f"chart_{player}"):
-                        player_scores = df[df["player"] == player][["round_date", "score"]]
-
-                        if not player_scores.empty:
-                            chart = (
-                                alt.Chart(player_scores)
-                                .mark_line(point=True)
-                                .encode(
-                                    x="round_date:T",
-                                    y="score:Q",
-                                    tooltip=["round_date:T", "score:Q"]
-                                )
-                                .properties(title=f"{player} Scores Over Time", height=300)
-                            )
-                            st.altair_chart(chart, use_container_width=True)  # ✅ will render properly now
-                        else:
-                            st.info("No scores available for this player.")
-
-
+                st.altair_chart(chart, use_container_width=True)
+            else:
+                st.info("No scores available for this player.")
 # --- Add Round ---
 elif menu == "Add Round":
     st.subheader("Add a New Round")
