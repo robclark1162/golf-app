@@ -341,7 +341,7 @@ elif menu == "Summary":
                 summary_df["Best Round Rank"] = summary_df["Best Round"].rank(ascending=False, method="min")
                 summary_df["Worst Round Rank"] = summary_df["Worst Round"].rank(ascending=True, method="min")
                 summary_df["Rank Best 6"] = summary_df["Avg best 6"].rank(ascending=False, method="min")
-                summary_df["Rank Worst"] = summary_df["Avg worst 6"].rank(ascending=False, method="min")
+                summary_df["Rank Worst"] = summary_df["Avg worst 6"].rank(ascending=True, method="min")
 
                 # ✅ Cast ranks to integers
                 rank_cols = ["Avg Rank", "Best Round Rank", "Worst Round Rank", "Rank Best 6", "Rank Worst"]
