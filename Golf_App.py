@@ -183,24 +183,67 @@ else:
 if menu == "View Scores":
     st.subheader("All Scores")
     df = load_scores()
-    display_df = df.drop(columns=["player_id", "course_id", "round_id", "score_id"], errors="ignore")
+
+    display_df = df.drop(
+        columns=["player_id", "course_id", "round_id", "score_id"],
+        errors="ignore"
+    )
     st.dataframe(display_df.reset_index(drop=True), use_container_width=True)
 
-
+    # --- Average Scores ---
     st.subheader("Average Scores by Player")
     avg_df = df.groupby("player")["score"].mean().reset_index()
     st.bar_chart(avg_df.set_index("player"))
 
+    # --- Score trends (all players) ---
+    st.subheader("📊 Score Trends Over Time")
+    if not df.empty:
+        chart = (
+            alt.Chart(df)
+            .mark_line(point=True)
+            .encode(
+                x="round_date:T",
+                y="score:Q",
+                color="player:N",
+                tooltip=["round_date:T", "player:N", "score:Q", "course:N"]
+            )
+            .properties(height=400)
+        )
+        st.altair_chart(chart, use_container_width=True)
+
+        # --- Single player dropdown ---
+        players = sorted(df["player"].unique())
+        player_sel = st.selectbox("🔍 View single player's scores:", players, key="view_scores_player")
+        ps = df[df["player"] == player_sel]
+        if not ps.empty:
+            player_chart = (
+                alt.Chart(ps)
+                .mark_line(point=True)
+                .encode(
+                    x="round_date:T",
+                    y="score:Q",
+                    tooltip=["round_date:T", "score:Q", "course:N"]
+                )
+                .properties(title=f"{player_sel} Scores Over Time", height=300)
+            )
+            st.altair_chart(player_chart, use_container_width=True)
+
+# --- Scores by Day ---
 elif menu == "Scores by Day":
     st.subheader("Scores by Day")
-
     df = load_scores()
+
     if df.empty:
         st.info("No scores available yet.")
     else:
         # --- Add filter date ---
         min_date = pd.to_datetime(df["round_date"]).min().date()
-        start_date = st.date_input("📅 Only include scores after:", value=min_date, min_value=min_date, key="scores_by_day_date")
+        start_date = st.date_input(
+            "📅 Only include scores after:",
+            value=min_date,
+            min_value=min_date,
+            key="scores_by_day_date"
+        )
 
         # Filter data
         df = df[pd.to_datetime(df["round_date"]) >= pd.to_datetime(start_date)]
@@ -210,9 +253,9 @@ elif menu == "Scores by Day":
         else:
             # Pivot scores
             scores_pivot = df.pivot_table(
-                index=["round_date", "course"], 
-                columns="player", 
-                values="score", 
+                index=["round_date", "course"],
+                columns="player",
+                values="score",
                 aggfunc="first"
             ).reset_index()
 
@@ -221,38 +264,63 @@ elif menu == "Scores by Day":
             cols = ["round_date", "course"] + sorted(player_cols)
             scores_pivot = scores_pivot[cols]
 
-            fmt_scores = {c: "{:.0f}" for c in player_cols}
             st.dataframe(scores_pivot.reset_index(drop=True), use_container_width=True)
 
-            # Birdies/Eagles
+            # --- Chart scores by day (all players) ---
+            st.subheader("📈 Scores by Day (All Players)")
+            chart = (
+                alt.Chart(df)
+                .mark_line(point=True)
+                .encode(
+                    x="round_date:T",
+                    y="score:Q",
+                    color="player:N",
+                    tooltip=["round_date:T", "player:N", "score:Q", "course:N"]
+                )
+                .properties(height=400)
+            )
+            st.altair_chart(chart, use_container_width=True)
+
+            # --- Single player dropdown ---
+            players = sorted(df["player"].unique())
+            player_sel = st.selectbox("🔍 View single player's scores:", players, key="scores_by_day_player")
+            ps = df[df["player"] == player_sel]
+            if not ps.empty:
+                player_chart = (
+                    alt.Chart(ps)
+                    .mark_line(point=True)
+                    .encode(
+                        x="round_date:T",
+                        y="score:Q",
+                        tooltip=["round_date:T", "score:Q", "course:N"]
+                    )
+                    .properties(title=f"{player_sel} Scores Over Time", height=300)
+                )
+                st.altair_chart(player_chart, use_container_width=True)
+
+            # --- Birdies/Eagles tables ---
             birds_eags = df.melt(
-                id_vars=["round_date", "course", "player"], 
-                value_vars=["birdies", "eagles"], 
-                var_name="stat", 
+                id_vars=["round_date", "course", "player"],
+                value_vars=["birdies", "eagles"],
+                var_name="stat",
                 value_name="count"
             )
             birds_eags_pivot = birds_eags.pivot_table(
-                index=["round_date", "course", "stat"], 
-                columns="player", 
-                values="count", 
+                index=["round_date", "course", "stat"],
+                columns="player",
+                values="count",
                 aggfunc="first"
             ).reset_index()
 
             birdies_table = birds_eags_pivot[birds_eags_pivot["stat"] == "birdies"].drop(columns=["stat"])
             eagles_table = birds_eags_pivot[birds_eags_pivot["stat"] == "eagles"].drop(columns=["stat"])
 
-            # format
-            pcols_bird = [c for c in birdies_table.columns if c not in ["round_date", "course"]]
-            pcols_eagle = [c for c in eagles_table.columns if c not in ["round_date", "course"]]
-
-            fmt_bird = {c: "{:.0f}" for c in pcols_bird}
-            fmt_eag  = {c: "{:.0f}" for c in pcols_eagle}
-
-            st.markdown("### Birdies")
+            st.markdown("### 🐦 Birdies")
             st.dataframe(birdies_table.reset_index(drop=True), use_container_width=True)
 
-            st.markdown("### Eagles")
-            st.dataframe(eagles_table.style.format(fmt_eag), use_container_width=True)
+            st.markdown("### 🦅 Eagles")
+            st.dataframe(eagles_table.reset_index(drop=True), use_container_width=True)
+
 
 elif menu == "Summary":
     st.subheader("Player Summary")
