@@ -322,7 +322,7 @@ st.dataframe(birdies_table.reset_index(drop=True), use_container_width=True)
 st.markdown("### 🦅 Eagles (Table)")
 st.dataframe(eagles_table.reset_index(drop=True), use_container_width=True)
 
-# --- Birdies + Eagles combined trends ---
+# --- Birdies + Eagles trends ---
 st.markdown("### 📊 Birdies & Eagles Trend (per Player)")
 
 # Player selector
@@ -342,13 +342,19 @@ if not ps_trends.empty:
         .encode(
             x="round_date:T",
             y="count:Q",
-            color="stat:N",  # color by Birdies/Eagles
-            tooltip=["round_date:T", "stat:N", "count:Q", "course:N"]
+            color=alt.Color("stat:N", title="Stat"),  # Birdies/Eagles color
+            tooltip=["round_date:T", "course:N", "stat:N", "count:Q"]
         )
         .properties(title=f"{player_sel} – Birdies & Eagles Over Time", height=300)
     )
     st.altair_chart(combined_chart, use_container_width=True)
 
+    # --- Collapsible tables ---
+with st.expander("📋 Birdies Table"):
+    st.dataframe(birdies_table.reset_index(drop=True), use_container_width=True)
+
+with st.expander("📋 Eagles Table"):
+    st.dataframe(eagles_table.reset_index(drop=True), use_container_width=True)
 
 elif menu == "Summary":
     st.subheader("Player Summary")
