@@ -300,29 +300,29 @@ elif menu == "Scores by Day":
                 st.altair_chart(player_chart, use_container_width=True)
 
 # --- Birdies/Eagles tables ---
-birds_eags = df.melt(
-    id_vars=["round_date", "course", "player"],
-    value_vars=["birdies", "eagles"],
-    var_name="stat",
-    value_name="count"
-)
+            birds_eags = df.melt(
+                id_vars=["round_date", "course", "player"],
+                value_vars=["birdies", "eagles"],
+                var_name="stat",
+                value_name="count"
+            )
 
-birds_eags_pivot = birds_eags.pivot_table(
-    index=["round_date", "course", "stat"],
-    columns="player",
-    values="count",
-    aggfunc="first"
-).reset_index()
+            birds_eags_pivot = birds_eags.pivot_table(
+                index=["round_date", "course", "stat"],
+                columns="player",
+                values="count",
+                aggfunc="first"
+            ).reset_index()
 
-birdies_table = birds_eags_pivot[birds_eags_pivot["stat"] == "birdies"].drop(columns=["stat"])
-eagles_table = birds_eags_pivot[birds_eags_pivot["stat"] == "eagles"].drop(columns=["stat"])
+            birdies_table = birds_eags_pivot[birds_eags_pivot["stat"] == "birdies"].drop(columns=["stat"])
+            eagles_table = birds_eags_pivot[birds_eags_pivot["stat"] == "eagles"].drop(columns=["stat"])
 
-    # --- Collapsible tables ---
-with st.expander("📋 Birdies Table"):
-        st.dataframe(birdies_table.reset_index(drop=True), use_container_width=True)
+                # --- Collapsible tables ---
+            with st.expander("📋 Birdies Table"):
+                    st.dataframe(birdies_table.reset_index(drop=True), use_container_width=True)
 
-with st.expander("📋 Eagles Table"):
-        st.dataframe(eagles_table.reset_index(drop=True), use_container_width=True)
+            with st.expander("📋 Eagles Table"):
+                    st.dataframe(eagles_table.reset_index(drop=True), use_container_width=True)
 
 # --- Birdies + Eagles trends ---
 st.markdown("### 📊 Birdies & Eagles Trend (per Player)")
