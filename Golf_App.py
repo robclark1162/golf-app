@@ -188,8 +188,8 @@ if menu == "View Scores":
         columns=["player_id", "course_id", "round_id", "score_id"],
         errors="ignore"
     )
-    
-    st.dataframe(display_df.reset_index(drop=True), use_container_width=True)
+    with st.expander("📋 Scrores"):
+        st.dataframe(display_df.reset_index(drop=True), use_container_width=True)
 
     # --- Average Scores ---
     st.subheader("Average Scores by Player")
