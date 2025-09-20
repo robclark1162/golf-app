@@ -188,6 +188,8 @@ if menu == "View Scores":
         columns=["player_id", "course_id", "round_id", "score_id"],
         errors="ignore"
     )
+    
+with st.expander("📋 Scores"):
     st.dataframe(display_df.reset_index(drop=True), use_container_width=True)
 
     # --- Average Scores ---
@@ -263,7 +265,7 @@ elif menu == "Scores by Day":
             player_cols = [c for c in scores_pivot.columns if c not in ["round_date", "course"]]
             cols = ["round_date", "course"] + sorted(player_cols)
             scores_pivot = scores_pivot[cols]
-        with st.expander("📋Scores By Day"):
+
             st.dataframe(scores_pivot.reset_index(drop=True), use_container_width=True)
 
             # --- Chart scores by day (all players) ---
