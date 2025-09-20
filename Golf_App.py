@@ -263,7 +263,7 @@ elif menu == "Scores by Day":
             player_cols = [c for c in scores_pivot.columns if c not in ["round_date", "course"]]
             cols = ["round_date", "course"] + sorted(player_cols)
             scores_pivot = scores_pivot[cols]
-
+        with st.expander("📋Load_scores"):
             st.dataframe(scores_pivot.reset_index(drop=True), use_container_width=True)
 
             # --- Chart scores by day (all players) ---
@@ -316,11 +316,12 @@ birds_eags_pivot = birds_eags.pivot_table(
 birdies_table = birds_eags_pivot[birds_eags_pivot["stat"] == "birdies"].drop(columns=["stat"])
 eagles_table = birds_eags_pivot[birds_eags_pivot["stat"] == "eagles"].drop(columns=["stat"])
 
-st.markdown("### 🐦 Birdies (Table)")
-st.dataframe(birdies_table.reset_index(drop=True), use_container_width=True)
+    # --- Collapsible tables ---
+with st.expander("📋 Birdies Table"):
+        st.dataframe(birdies_table.reset_index(drop=True), use_container_width=True)
 
-st.markdown("### 🦅 Eagles (Table)")
-st.dataframe(eagles_table.reset_index(drop=True), use_container_width=True)
+with st.expander("📋 Eagles Table"):
+        st.dataframe(eagles_table.reset_index(drop=True), use_container_width=True)
 
 # --- Birdies + Eagles trends ---
 st.markdown("### 📊 Birdies & Eagles Trend (per Player)")
@@ -349,12 +350,7 @@ if not ps_trends.empty:
     )
     st.altair_chart(combined_chart, use_container_width=True)
 
-    # --- Collapsible tables ---
-    with st.expander("📋 Birdies Table"):
-        st.dataframe(birdies_table.reset_index(drop=True), use_container_width=True)
 
-    with st.expander("📋 Eagles Table"):
-        st.dataframe(eagles_table.reset_index(drop=True), use_container_width=True)
 
 elif menu == "Summary":
     st.subheader("Player Summary")
