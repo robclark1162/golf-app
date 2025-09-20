@@ -325,31 +325,31 @@ elif menu == "Scores by Day":
                     st.dataframe(eagles_table.reset_index(drop=True), use_container_width=True)
 
 # --- Birdies + Eagles trends ---
-st.markdown("### 📊 Birdies & Eagles Trend (per Player)")
+                    st.markdown("### 📊 Birdies & Eagles Trend (per Player)")
 
 # Player selector
-player_sel = st.selectbox(
-    "🔍 Select a player:",
-    sorted(df["player"].unique()),
-    key="birds_eags_player"
-)
+            player_sel = st.selectbox(
+                "🔍 Select a player:",
+                sorted(df["player"].unique()),
+                key="birds_eags_player"
+            )
 
-# Filter Birdies/Eagles for selected player
-ps_trends = birds_eags[birds_eags["player"] == player_sel]
+            # Filter Birdies/Eagles for selected player
+            ps_trends = birds_eags[birds_eags["player"] == player_sel]
 
-if not ps_trends.empty:
-    combined_chart = (
-        alt.Chart(ps_trends)
-        .mark_line(point=True)
-        .encode(
-            x="round_date:T",
-            y="count:Q",
-            color=alt.Color("stat:N", title="Stat"),  # Birdies/Eagles color
-            tooltip=["round_date:T", "course:N", "stat:N", "count:Q"]
-        )
-        .properties(title=f"{player_sel} – Birdies & Eagles Over Time", height=300)
-    )
-    st.altair_chart(combined_chart, use_container_width=True)
+            if not ps_trends.empty:
+                combined_chart = (
+                    alt.Chart(ps_trends)
+                    .mark_line(point=True)
+                    .encode(
+                        x="round_date:T",
+                        y="count:Q",
+                        color=alt.Color("stat:N", title="Stat"),  # Birdies/Eagles color
+                        tooltip=["round_date:T", "course:N", "stat:N", "count:Q"]
+                    )
+                    .properties(title=f"{player_sel} – Birdies & Eagles Over Time", height=300)
+                )
+                st.altair_chart(combined_chart, use_container_width=True)
 
 
 
