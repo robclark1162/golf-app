@@ -5,7 +5,6 @@ from supabase import create_client, Client
 import os
 import base64
 import altair as alt
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
 if "user" not in st.session_state:
     st.session_state["user"] = None
