@@ -4,6 +4,7 @@ from datetime import date
 from supabase import create_client, Client
 import os
 import base64
+import altair as alt
 
 if "user" not in st.session_state:
     st.session_state["user"] = None
@@ -335,7 +336,33 @@ elif menu == "Summary":
                     }
 
                 summary_df = pd.DataFrame(summary).T
+for _, row in summary_df.iterrows():
+    player_name = row["name"]
+    player_id = row["player_id"]
 
+    # Display player name + "View Scores" button
+    col1, col2 = st.columns([3,1])
+    col1.markdown(f"**{player_name}**")
+    with col2:
+        if st.button("📊", key=f"chart_{player_id}"):
+            # Filter player's scores
+            player_scores = df[df["player_id"] == player_id][["round_date", "score"]]
+
+            if not player_scores.empty:
+                chart = (
+                    alt.Chart(player_scores)
+                    .mark_line(point=True)
+                    .encode(
+                        x="round_date:T",
+                        y="score:Q",
+                        tooltip=["round_date:T", "score:Q"]
+                    )
+                    .properties(title=f"{player_name} Scores Over Time", height=300)
+                )
+                st.altair_chart(chart, use_container_width=True)
+            else:
+                st.info("No scores available for this player.")
+                
 # --- Ranks (Stableford: higher is better) ---
                 summary_df["Avg Rank"] = summary_df["Average"].rank(ascending=False, method="min")
                 summary_df["Best Round Rank"] = summary_df["Best Round"].rank(ascending=False, method="min")
