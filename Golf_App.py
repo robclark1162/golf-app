@@ -349,38 +349,6 @@ if not ps_trends.empty:
     )
     st.altair_chart(combined_chart, use_container_width=True)
 
-# --- Optional: Single-player dropdown for Birdies/Eagles ---
-player_sel_bird = st.selectbox("🔍 View single player's Birdies:", sorted(df["player"].unique()), key="birdies_player")
-ps_bird = birds_eags[(birds_eags["player"] == player_sel_bird) & (birds_eags["stat"] == "birdies")]
-if not ps_bird.empty:
-    player_bird_chart = (
-        alt.Chart(ps_bird)
-        .mark_line(point=True)
-        .encode(
-            x="round_date:T",
-            y="count:Q",
-            tooltip=["round_date:T", "count:Q", "course:N"]
-        )
-        .properties(title=f"{player_sel_bird} Birdies Over Time", height=250)
-    )
-    st.altair_chart(player_bird_chart, use_container_width=True)
-
-player_sel_eagle = st.selectbox("🔍 View single player's Eagles:", sorted(df["player"].unique()), key="eagles_player")
-ps_eagle = birds_eags[(birds_eags["player"] == player_sel_eagle) & (birds_eags["stat"] == "eagles")]
-if not ps_eagle.empty:
-    player_eagle_chart = (
-        alt.Chart(ps_eagle)
-        .mark_line(point=True)
-        .encode(
-            x="round_date:T",
-            y="count:Q",
-            tooltip=["round_date:T", "count:Q", "course:N"]
-        )
-        .properties(title=f"{player_sel_eagle} Eagles Over Time", height=250)
-    )
-    st.altair_chart(player_eagle_chart, use_container_width=True)
-
-
 
 elif menu == "Summary":
     st.subheader("Player Summary")
