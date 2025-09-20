@@ -189,7 +189,6 @@ if menu == "View Scores":
         errors="ignore"
     )
     
-with st.expander("📋 Scores"):
     st.dataframe(display_df.reset_index(drop=True), use_container_width=True)
 
     # --- Average Scores ---
