@@ -339,7 +339,7 @@ elif menu == "Summary":
 # --- Ranks (Stableford: higher is better) ---
                 summary_df["Avg Rank"] = summary_df["Average"].rank(ascending=False, method="min")
                 summary_df["Best Round Rank"] = summary_df["Best Round"].rank(ascending=False, method="min")
-                summary_df["Worst Round Rank"] = summary_df["Worst Round"].rank(ascending=False, method="min")
+                summary_df["Worst Round Rank"] = summary_df["Worst Round"].rank(ascending=True, method="min")
                 summary_df["Rank Best 6"] = summary_df["Avg best 6"].rank(ascending=False, method="min")
                 summary_df["Rank Worst"] = summary_df["Avg worst 6"].rank(ascending=False, method="min")
 
