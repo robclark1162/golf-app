@@ -350,11 +350,11 @@ if not ps_trends.empty:
     st.altair_chart(combined_chart, use_container_width=True)
 
     # --- Collapsible tables ---
-with st.expander("📋 Birdies Table"):
-    st.dataframe(birdies_table.reset_index(drop=True), use_container_width=True)
+    with st.expander("📋 Birdies Table"):
+        st.dataframe(birdies_table.reset_index(drop=True), use_container_width=True)
 
-with st.expander("📋 Eagles Table"):
-    st.dataframe(eagles_table.reset_index(drop=True), use_container_width=True)
+    with st.expander("📋 Eagles Table"):
+        st.dataframe(eagles_table.reset_index(drop=True), use_container_width=True)
 
 elif menu == "Summary":
     st.subheader("Player Summary")
