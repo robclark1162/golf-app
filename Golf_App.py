@@ -48,22 +48,18 @@ def insert_player(name: str):
     supabase.table("players").insert({"name": name, "Full Name": full_name, "Image":image_url}).execute()
 
 
-def delete_player(player_id: int):
-    supabase.table("players").delete().eq("player_id", player_id).execute()
+def update_player(player_id, name, full_name="", image_url=None):
+    # Build update payload
+    update_data = {
+        "name": name,
+        "full_name": full_name
+    }
+    if image_url:  # only include if not empty
+        update_data["image_url"] = image_url
+    else:
+        update_data["image_url"] = None  # clears existing image
 
-def update_player(player_id, name, full_name="", image_url=""):
-    try:
-        supabase.table("players").update(
-            {
-                "name": name,
-                "full_name": full_name,
-                "image_url": image_url
-            }
-        ).eq("player_id", player_id).execute()
-        return True
-    except Exception as e:
-        st.error(f"Failed to update player: {e}")
-        return False
+    return supabase.table("players").update(update_data).eq("player_id", player_id).execute()
 
 def load_courses():
     response = supabase.table("courses").select("course_id, name").order("name").execute()
@@ -669,7 +665,7 @@ elif menu == "Manage Players":
         with st.expander(f"✏️ Edit {row['name']}"):
             edit_name = st.text_input("Short Name", value=row["name"], key=f"edit_name_{row['player_id']}")
             edit_full = st.text_input("Full Name", value=row.get("full_name", ""), key=f"edit_full_{row['player_id']}")
-            edit_image = st.text_input("Image URL", value=row.get("image_url", ""), key=f"edit_image_{row['player_id']}")
+            edit_image = st.text_input("Image URL", value=row.get("image_url", "") or "", key=f"edit_image_{row['player_id']}")
 
             # --- Preview image safely ---
             if edit_image.strip():
@@ -683,7 +679,6 @@ elif menu == "Manage Players":
             # --- Save / Cancel buttons ---
             colA, colB = st.columns([1, 1])
             if colA.button("💾 Save", key=f"save_{row['player_id']}"):
-                # only attempt to update if we have a valid short name
                 if edit_name.strip():
                     try:
                         update_player(row["player_id"], edit_name.strip(), edit_full.strip(), edit_image.strip())
@@ -696,6 +691,7 @@ elif menu == "Manage Players":
 
             if colB.button("❌ Cancel", key=f"cancel_{row['player_id']}"):
                 st.rerun()
+
     else:
         st.info("No players found.")
 
