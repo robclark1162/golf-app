@@ -40,12 +40,12 @@ if st.session_state["refresh_token"] and not st.session_state["user"]:
 
 # --- DB Helpers (Supabase) ---
 def load_players():
-    response = supabase.table("players").select("player_id, name, full_name").order("name").execute()
+    response = supabase.table("players").select("player_id, name, full_name, image_url").order("name").execute()
     return pd.DataFrame(response.data)
 
 
 def insert_player(name: str):
-    supabase.table("players").insert({"name": name, "Full Name": full_name}).execute()
+    supabase.table("players").insert({"name": name, "Full Name": full_name, "Image":image_url}).execute()
 
 
 def delete_player(player_id: int):
@@ -634,29 +634,46 @@ elif menu == "Manage Players":
     st.subheader("Manage Players")
 
     # Add new player
-    new_player = st.text_input("Add a new player")
+    #new_player = st.text_input("Add a new player")
+        # --- Add new player ---
+    st.markdown("### ➕ Add a New Player")
+    new_name = st.text_input("Short Name (nickname, code)", key="new_name")
+    new_full_name = st.text_input("Full Name", key="new_full_name")
+    new_image_url = st.text_input("Image URL (optional)", key="new_image")
+
     if st.button("➕ Add Player"):
-        if new_player.strip():
-            insert_player(new_player.strip())
-            st.success(f"✅ Player '{new_player}' added!")
+        if new_name.strip():
+            insert_player(new_name.strip(), new_full_name.strip(), new_image_url.strip())
+            st.success(f"✅ Player '{new_name}' added!")
             st.rerun()
         else:
-            st.warning("Please enter a valid name.")
+            st.warning("Please enter at least a Short Name.")
 
-    # List existing players
+     # --- List existing players ---
     players = load_players()
     if not players.empty:
         st.write("### Current Players")
         for _, row in players.iterrows():
-            col0, col1, col2 = st.columns([3, 1, 1])
-            col0.write(row["name"])
-            col1.write(row["full_name"])
-            if col2.button("❌ Delete", key=f"del_player_{row['player_id']}"):
+            col0, col1, col2, col3 = st.columns([2, 3, 1, 1])
+            
+            # Show image if available
+            if row.get("image_url"):
+                col0.image(row["image_url"], width=60)
+            else:
+                col0.write("—")
+
+            # Show names
+            col1.write(f"**{row['name']}**")
+            col1.write(row.get("full_name", "—"))
+
+            # Delete button
+            if col3.button("❌ Delete", key=f"del_player_{row['player_id']}"):
                 delete_player(row["player_id"])
                 st.success(f"🗑️ Player '{row['name']}' deleted.")
                 st.rerun()
     else:
         st.info("No players found.")
+
 elif menu == "Manage Courses":
     st.subheader("Manage Courses")
 
