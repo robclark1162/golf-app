@@ -51,6 +51,12 @@ def insert_player(name: str):
 def delete_player(player_id: int):
     supabase.table("players").delete().eq("player_id", player_id).execute()
 
+def update_player(player_id, name, full_name="", image_url=""):    
+    supabase.table("players").update({
+        "name": name,
+        "full_name": full_name,
+        "image_url": image_url
+        }).eq("player_id").eq("player_id").execute()
 
 def load_courses():
     response = supabase.table("courses").select("course_id, name").order("name").execute()
@@ -633,9 +639,7 @@ elif menu == "Edit Round":
 elif menu == "Manage Players":
     st.subheader("Manage Players")
 
-    # Add new player
-    #new_player = st.text_input("Add a new player")
-        # --- Add new player ---
+    # --- Add new player ---
     st.markdown("### ➕ Add a New Player")
     new_name = st.text_input("Short Name (nickname, code)", key="new_name")
     new_full_name = st.text_input("Full Name", key="new_full_name")
@@ -649,28 +653,37 @@ elif menu == "Manage Players":
         else:
             st.warning("Please enter at least a Short Name.")
 
-     # --- List existing players ---
+    # --- List and edit existing players ---
     players = load_players()
     if not players.empty:
         st.write("### Current Players")
+
         for _, row in players.iterrows():
-            col0, col1, col2, col3 = st.columns([2, 3, 1, 1])
-            
-            # Show image if available
-            if row.get("image_url"):
-                col0.image(row["image_url"], width=60)
-            else:
-                col0.write("—")
+            with st.expander(f"⚙️ Edit Player: {row['name']}"):
+                col0, col1 = st.columns([1, 3])
 
-            # Show names
-            col1.write(f"**{row['name']}**")
-            col1.write(row.get("full_name", "—"))
+                # Image preview
+                if row.get("image_url"):
+                    col0.image(row["image_url"], width=80)
+                else:
+                    col0.write("No image")
 
-            # Delete button
-            if col3.button("❌ Delete", key=f"del_player_{row['player_id']}"):
-                delete_player(row["player_id"])
-                st.success(f"🗑️ Player '{row['name']}' deleted.")
-                st.rerun()
+                # Editable fields
+                edit_name = col1.text_input("Short Name", value=row["name"], key=f"name_{row['player_id']}")
+                edit_full = col1.text_input("Full Name", value=row.get("full_name", ""), key=f"full_{row['player_id']}")
+                edit_image = col1.text_input("Image URL", value=row.get("image_url", ""), key=f"img_{row['player_id']}")
+
+                # Action buttons
+                colA, colB = st.columns([1, 1])
+                if colA.button("💾 Save", key=f"save_{row['player_id']}"):
+                    update_player(row["player_id"], edit_name.strip(), edit_full.strip(), edit_image.strip())
+                    st.success(f"✅ Player '{edit_name}' updated.")
+                    st.rerun()
+
+                if colB.button("❌ Delete", key=f"del_{row['player_id']}"):
+                    delete_player(row["player_id"])
+                    st.success(f"🗑️ Player '{row['name']}' deleted.")
+                    st.rerun()
     else:
         st.info("No players found.")
 
