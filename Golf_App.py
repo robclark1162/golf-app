@@ -40,12 +40,12 @@ if st.session_state["refresh_token"] and not st.session_state["user"]:
 
 # --- DB Helpers (Supabase) ---
 def load_players():
-    response = supabase.table("players").select("player_id, name").order("name").execute()
+    response = supabase.table("players").select("player_id, name, Full_Name").order("name").execute()
     return pd.DataFrame(response.data)
 
 
 def insert_player(name: str):
-    supabase.table("players").insert({"name": name}).execute()
+    supabase.table("players").insert({"name": name, "Full Name": str(Full_Name)}).execute()
 
 
 def delete_player(player_id: int):
@@ -648,8 +648,9 @@ elif menu == "Manage Players":
     if not players.empty:
         st.write("### Current Players")
         for _, row in players.iterrows():
-            col1, col2 = st.columns([3, 1])
+            col0, col1, col2 = st.columns([3, 1])
             col1.write(row["name"])
+            col0.write(row["Full_Name"])
             if col2.button("❌ Delete", key=f"del_player_{row['player_id']}"):
                 delete_player(row["player_id"])
                 st.success(f"🗑️ Player '{row['name']}' deleted.")
