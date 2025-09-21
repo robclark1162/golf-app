@@ -51,7 +51,7 @@ def insert_player(name: str):
 def delete_player(player_id: int):
     supabase.table("players").delete().eq("player_id", player_id).execute()
 
-def update_player(player_id, name, full_name="", image_url=""):    
+def update_player(name, full_name="", image_url=""):    
     supabase.table("players").update({
         "name": name,
         "full_name": full_name,
