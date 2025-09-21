@@ -648,7 +648,7 @@ elif menu == "Manage Players":
     if not players.empty:
         st.write("### Current Players")
         for _, row in players.iterrows():
-            col0, col1, col2 = st.columns([3, 1])
+            col0, col1, col2 = st.columns([3, 1, 1])
             col1.write(row["name"])
             col0.write(row["Full Name"])
             if col2.button("❌ Delete", key=f"del_player_{row['player_id']}"):
