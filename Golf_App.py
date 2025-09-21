@@ -51,28 +51,19 @@ def insert_player(name: str):
 def delete_player(player_id: int):
     supabase.table("players").delete().eq("player_id", player_id).execute()
 
+def update_player(player_id, name, full_name="", image_url=""):
     try:
-        player_id = int(player_id)
-    except Exception:
-        st.error("Invalid player_id (must be integer).")
+        supabase.table("players").update(
+            {
+                "name": name,
+                "full_name": full_name,
+                "image_url": image_url
+            }
+        ).eq("player_id", player_id).execute()
+        return True
+    except Exception as e:
+        st.error(f"Failed to update player: {e}")
         return False
-
-    # --- Supabase ---
-    if "supabase" in globals():
-        try:
-            resp = supabase.table("players").update(
-                {
-                    "name": name,
-                    "full_name": full_name,
-                    "image_url": image_url,
-                }
-            ).eq("player_id", player_id).execute()
-            if getattr(resp, "error", None):
-                raise Exception(resp.error)
-            return True
-        except Exception as e:
-            st.error(f"Supabase update failed: {e}")
-            return False
 
 def load_courses():
     response = supabase.table("courses").select("course_id, name").order("name").execute()
@@ -674,32 +665,37 @@ elif menu == "Manage Players":
     if not players.empty:
         st.write("### Current Players")
 
-        for _, row in players.iterrows():
-            with st.expander(f"⚙️ Edit Player: {row['name']}"):
-                col0, col1 = st.columns([1, 3])
+    for _, row in players.iterrows():
+        with st.expander(f"✏️ Edit {row['name']}"):
+            edit_name = st.text_input("Short Name", value=row["name"], key=f"edit_name_{row['player_id']}")
+            edit_full = st.text_input("Full Name", value=row.get("full_name", ""), key=f"edit_full_{row['player_id']}")
+            edit_image = st.text_input("Image URL", value=row.get("image_url", ""), key=f"edit_image_{row['player_id']}")
 
-                # Image preview
-                if row.get("image_url"):
-                    col0.image(row["image_url"], width=80)
+            # --- Preview image safely ---
+            if edit_image.strip():
+                try:
+                    st.image(edit_image, width=120, caption="Preview")
+                except Exception:
+                    st.warning("⚠️ Could not load the image. Check the URL.")
+            else:
+                st.info("❌ No image provided")
+
+            # --- Save / Cancel buttons ---
+            colA, colB = st.columns([1, 1])
+            if colA.button("💾 Save", key=f"save_{row['player_id']}"):
+                # only attempt to update if we have a valid short name
+                if edit_name.strip():
+                    try:
+                        update_player(row["player_id"], edit_name.strip(), edit_full.strip(), edit_image.strip())
+                        st.success(f"✅ Player '{edit_name}' updated.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Failed to update player: {e}")
                 else:
-                    col0.write("No image")
+                    st.warning("Player name cannot be empty.")
 
-                # Editable fields
-                edit_name = col1.text_input("Short Name", value=row["name"], key=f"name_{row['player_id']}")
-                edit_full = col1.text_input("Full Name", value=row.get("full_name", ""), key=f"full_{row['player_id']}")
-                edit_image = col1.text_input("Image URL", value=row.get("image_url", ""), key=f"img_{row['player_id']}")
-
-                # Action buttons
-                colA, colB = st.columns([1, 1])
-                if colA.button("💾 Save", key=f"save_{row['player_id']}"):
-                    update_player(row["player_id"], edit_name.strip(), edit_full.strip(), edit_image.strip())
-                    st.success(f"✅ Player '{edit_name}' updated.")
-                    st.rerun()
-
-                if colB.button("❌ Delete", key=f"del_{row['player_id']}"):
-                    delete_player(row["player_id"])
-                    st.success(f"🗑️ Player '{row['name']}' deleted.")
-                    st.rerun()
+            if colB.button("❌ Cancel", key=f"cancel_{row['player_id']}"):
+                st.rerun()
     else:
         st.info("No players found.")
 
