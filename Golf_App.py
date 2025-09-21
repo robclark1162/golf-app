@@ -51,19 +51,28 @@ def insert_player(name: str):
 def delete_player(player_id: int):
     supabase.table("players").delete().eq("player_id", player_id).execute()
 
-def update_player(player_id, name, full_name="", image_url=""):
     try:
-        supabase.table("players").update(
-            {
-                "name": name,
-                "full_name": full_name,
-                "image_url": image_url
-            }
-        ).eq("player_id", player_id).execute()
-        return True
-    except Exception as e:
-        st.error(f"Failed to update player: {e}")
+        player_id = int(player_id)
+    except Exception:
+        st.error("Invalid player_id (must be integer).")
         return False
+
+    # --- Supabase ---
+    if "supabase" in globals():
+        try:
+            resp = supabase.table("players").update(
+                {
+                    "name": name,
+                    "full_name": full_name,
+                    "image_url": image_url,
+                }
+            ).eq("player_id", player_id).execute()
+            if getattr(resp, "error", None):
+                raise Exception(resp.error)
+            return True
+        except Exception as e:
+            st.error(f"Supabase update failed: {e}")
+            return False
 
 def load_courses():
     response = supabase.table("courses").select("course_id, name").order("name").execute()
