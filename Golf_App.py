@@ -509,27 +509,24 @@ elif menu == "Summary":
                 st.markdown(f"<div style='overflow-x:auto; width:160%'>{styled_summary}</div>", unsafe_allow_html=True)
                 # --- Add per-player charts ---
                 st.subheader("📊 Player Score Trends")
+                for player in summary_df["Player"]:
+                    if st.button(f"Show {player}'s scores", key=f"chart_{player}"):
+                        player_scores = df[df["player"] == player][["round_date", "score"]]
 
-                    for player in summary_df["Player"]:
-                        if st.button(f"Show {player}'s scores", key=f"chart_{player}"):
-                            player_scores = df[df["player"] == player][["round_date", "score"]]
-
-                            if not player_scores.empty:
-                                chart = (
-                                    alt.Chart(player_scores)
-                                    .mark_line(point=True)
-                                    .encode(
-                                        x="round_date:T",
-                                        y="score:Q",
-                                        tooltip=["round_date:T", "score:Q"]
-                                    )
-                                    .properties(title=f"{player} Scores Over Time", height=300)
+                        if not player_scores.empty:
+                            chart = (
+                                alt.Chart(player_scores)
+                                .mark_line(point=True)
+                                .encode(
+                                    x="round_date:T",
+                                    y="score:Q",
+                                    tooltip=["round_date:T", "score:Q"]
                                 )
-                                st.altair_chart(chart, use_container_width=True)  # ✅ now inline
-                            else:
-                                st.info("No scores available for this player.")
-
-
+                                .properties(title=f"{player} Scores Over Time", height=300)
+                            )
+                            st.altair_chart(chart, use_container_width=True)  # ✅ now inline
+                        else:
+                            st.info("No scores available for this player.")
 
 # --- Add Round ---
 elif menu == "Add Round":
