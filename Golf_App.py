@@ -427,7 +427,7 @@ elif menu == "Summary":
                     total_eagles = ps["eagles"].sum()
                     total_hats = ps["hat"].sum()
 
-                summary[display_name] = {
+                    summary[display_name] = {
                         "Times Played": times_played,
                         "Last Score": f"{int(last_score)} {trend}",
                         "Average": avg_score,
