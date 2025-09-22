@@ -439,7 +439,10 @@ elif menu == "Summary":
                     }
 
                 summary_df = pd.DataFrame(summary).T
-
+                # Add hat icon to latest hat-holder
+                summary_df["Player"] = summary_df["Player"].apply(
+                    lambda p: f"{p} {hat_icon}" if p == latest_hat_player else p
+                )
                 # --- Ranks ---
                 summary_df["Avg Rank"] = summary_df["Average"].rank(ascending=False, method="min")
                 summary_df["Best Round Rank"] = summary_df["Best Round"].rank(ascending=False, method="min")
