@@ -360,55 +360,55 @@ elif menu == "Scores by Day":
 
 
 elif menu == "Summary":
-    st.subheader("Player Summary")
-    df = load_scores()
-
-    if df.empty:
-        st.info("No scores available yet.")
-    else:
-        # --- Date filter ---
-        min_date = pd.to_datetime(df["round_date"]).min().date()
-        start_date = st.date_input("📅 Only include scores after:", value=min_date, min_value=min_date)
-        df = df[pd.to_datetime(df["round_date"]) >= pd.to_datetime(start_date)]
+        st.subheader("Player Summary")
+        df = load_scores()
 
         if df.empty:
-            st.warning("No scores found after selected date.")
+            st.info("No scores available yet.")
         else:
-            # --- Minimum rounds filter ---
-            min_rounds = st.number_input("Minimum rounds required", min_value=1, max_value=20, value=6, step=1)
-            rounds_count = df.groupby("player")["round_date"].nunique().reset_index()
-            rounds_count.columns = ["player", "rounds_played"]
-            eligible_players = rounds_count[rounds_count["rounds_played"] >= min_rounds]["player"]
-            df = df[df["player"].isin(eligible_players)]
+            # --- Date filter ---
+            min_date = pd.to_datetime(df["round_date"]).min().date()
+            start_date = st.date_input("📅 Only include scores after:", value=min_date, min_value=min_date)
+            df = df[pd.to_datetime(df["round_date"]) >= pd.to_datetime(start_date)]
 
             if df.empty:
-                st.warning(f"No players found with at least {min_rounds} rounds after {start_date}.")
+                st.warning("No scores found after selected date.")
             else:
-                summary = {}
-                players = sorted(df["player"].unique())
+                # --- Minimum rounds filter ---
+                min_rounds = st.number_input("Minimum rounds required", min_value=1, max_value=20, value=6, step=1)
+                rounds_count = df.groupby("player")["round_date"].nunique().reset_index()
+                rounds_count.columns = ["player", "rounds_played"]
+                eligible_players = rounds_count[rounds_count["rounds_played"] >= min_rounds]["player"]
+                df = df[df["player"].isin(eligible_players)]
 
-                # 🔴 Find single latest hat-holder
-                latest_hat_row = df[df["hat"] == 1].sort_values("round_date").tail(1)
-                latest_hat_player = latest_hat_row["player"].iloc[0] if not latest_hat_row.empty else None
+                if df.empty:
+                    st.warning(f"No players found with at least {min_rounds} rounds after {start_date}.")
+                else:
+                    summary = {}
+                    players = sorted(df["player"].unique())
 
-                for player in players:
-                    ps = df[df["player"] == player].sort_values("round_date")
-                    times_played = len(ps)
-                    if times_played == 0:
-                        continue
+                    # 🔴 Find single latest hat-holder
+                    latest_hat_row = df[df["hat"] == 1].sort_values("round_date").tail(1)
+                    latest_hat_player = latest_hat_row["player"].iloc[0] if not latest_hat_row.empty else None
 
-                    # Last score + trend
-                    last_score = ps.iloc[-1]["score"]
-                    if times_played > 1:
-                        prev_score = ps.iloc[-2]["score"]
-                        if last_score > prev_score:
-                            trend = "▲"
-                        elif last_score < prev_score:
-                            trend = "▼"
+                    for player in players:
+                        ps = df[df["player"] == player].sort_values("round_date")
+                        times_played = len(ps)
+                        if times_played == 0:
+                            continue
+
+                        # Last score + trend
+                        last_score = ps.iloc[-1]["score"]
+                        if times_played > 1:
+                            prev_score = ps.iloc[-2]["score"]
+                            if last_score > prev_score:
+                                trend = "▲"
+                            elif last_score < prev_score:
+                                trend = "▼"
+                            else:
+                                trend = "→"
                         else:
-                            trend = "→"
-                    else:
-                        trend = ""
+                            trend = ""
 
                     # Add red cap if this player is latest hat-holder
                     display_name = player
@@ -479,8 +479,6 @@ elif menu == "Summary":
                         elif val == 3:
                             return "background-color: #cd7f32; font-weight: bold"
                     return ""
-
-
 
                 # --- Styling ---
                 styled_summary = (
