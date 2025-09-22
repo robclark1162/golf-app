@@ -509,7 +509,7 @@ elif menu == "Summary":
                 # --- Add per-player charts ---
                 st.subheader("📊 Player Score Trends")
                 for player in summary_df["Player"]:
-                    if st.button(f"Show {player}'s scores", key=f"chart_{player}"):
+                    with st.expander(f"📈 {player}'s scores"):
                         player_scores = df[df["player"] == player][["round_date", "score"]]
 
                         if not player_scores.empty:
