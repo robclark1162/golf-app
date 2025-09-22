@@ -415,14 +415,12 @@ elif menu == "Summary":
                     if player == latest_hat_player:
                         display_name += f" {hat_icon}"
 
-                    # Averages
+                    # Averages & Totals
                     avg_score = ps["score"].mean()
                     best_round = ps["score"].max()
                     worst_round = ps["score"].min()
                     best6 = ps["score"].nlargest(6).mean() if times_played >= 6 else avg_score
                     worst6 = ps["score"].nsmallest(6).mean() if times_played >= 6 else avg_score
-
-                    # Totals
                     total_birdies = ps["birdies"].sum()
                     total_eagles = ps["eagles"].sum()
                     total_hats = ps["hat"].sum()
@@ -442,19 +440,18 @@ elif menu == "Summary":
 
                 summary_df = pd.DataFrame(summary).T
 
-# --- Ranks (Stableford: higher is better) ---
+                # --- Ranks ---
                 summary_df["Avg Rank"] = summary_df["Average"].rank(ascending=False, method="min")
                 summary_df["Best Round Rank"] = summary_df["Best Round"].rank(ascending=False, method="min")
                 summary_df["Worst Round Rank"] = summary_df["Worst Round"].rank(ascending=True, method="min")
                 summary_df["Rank Best 6"] = summary_df["Avg best 6"].rank(ascending=False, method="min")
                 summary_df["Rank Worst"] = summary_df["Avg worst 6"].rank(ascending=True, method="min")
 
-                # ✅ Cast ranks to integers
+                # ✅ Cast ranks & counts to integers
                 rank_cols = ["Avg Rank", "Best Round Rank", "Worst Round Rank", "Rank Best 6", "Rank Worst"]
                 for col in rank_cols:
                     summary_df[col] = summary_df[col].astype("Int64")
 
-                # ✅ Cast count columns to integers
                 count_cols = ["Times Played", "Best Round", "Worst Round", "Total Birdies", "Total Eagles", "Total Hats"]
                 for col in count_cols:
                     summary_df[col] = summary_df[col].astype("Int64")
@@ -469,7 +466,7 @@ elif menu == "Summary":
                 ]
                 summary_df = summary_df[cols_order]
 
-                # Highlight ranks
+                # --- Highlight function ---
                 def highlight_ranks(val, col):
                     if "Rank" in col:
                         if val == 1:
@@ -480,8 +477,6 @@ elif menu == "Summary":
                             return "background-color: #cd7f32; font-weight: bold"
                     return ""
 
-
-
                 # --- Styling ---
                 styled_summary = (
                     summary_df.style
@@ -490,7 +485,6 @@ elif menu == "Summary":
                         "Average": "{:.2f}",
                         "Avg best 6": "{:.2f}",
                         "Avg worst 6": "{:.2f}",
-                        # ✅ Integers
                         "Times Played": "{:.0f}",
                         "Best Round": "{:.0f}",
                         "Worst Round": "{:.0f}",
@@ -506,30 +500,33 @@ elif menu == "Summary":
                     .to_html(escape=False)
                 )
 
-            st.markdown(
-                "<div style='overflow-x:auto; width:160%'>" + styled_summary + "</div>",
-                unsafe_allow_html=True
-            )
-                # --- Add per-player charts ---
-            st.subheader("📊 Player Score Trends")
-            for player in summary_df["Player"]:
-                if st.button(f"Show {player}'s scores", key=f"chart_{player}"):
-                    player_scores = df[df["player"] == player][["round_date", "score"]]
+                # ✅ Render styled DataFrame correctly
+                st.markdown(
+                    "<div style='overflow-x:auto; width:160%'>" + styled_summary + "</div>",
+                    unsafe_allow_html=True
+                )
 
-                    if not player_scores.empty:
-                        chart = (
-                            alt.Chart(player_scores)
-                            .mark_line(point=True)
-                            .encode(
-                                x="round_date:T",
-                                y="score:Q",
-                                tooltip=["round_date:T", "score:Q"]
+                # --- Add per-player charts ---
+                st.subheader("📊 Player Score Trends")
+                for player in summary_df["Player"]:
+                    if st.button(f"Show {player}'s scores", key=f"chart_{player}"):
+                        player_scores = df[df["player"] == player][["round_date", "score"]]
+
+                        if not player_scores.empty:
+                            chart = (
+                                alt.Chart(player_scores)
+                                .mark_line(point=True)
+                                .encode(
+                                    x="round_date:T",
+                                    y="score:Q",
+                                    tooltip=["round_date:T", "score:Q"]
+                                )
+                                .properties(title=f"{player} Scores Over Time", height=300)
                             )
-                            .properties(title=f"{player} Scores Over Time", height=300)
-                        )
-                        st.altair_chart(chart, use_container_width=True)  # ✅ now inline
-                    else:
-                        st.info("No scores available for this player.")
+                            st.altair_chart(chart, use_container_width=True)
+                        else:
+                            st.info("No scores available for this player.")
+
 
 # --- Add Round ---
 elif menu == "Add Round":
