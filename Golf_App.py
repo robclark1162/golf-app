@@ -410,22 +410,19 @@ elif menu == "Summary":
                     else:
                         trend = ""
 
-                    # Add red cap if this player is latest hat-holder
-                    display_name = player
-                    if player == latest_hat_player:
-                        display_name += f" {hat_icon}"
-
-                    # Averages & Totals
+                    # Averages
                     avg_score = ps["score"].mean()
                     best_round = ps["score"].max()
                     worst_round = ps["score"].min()
                     best6 = ps["score"].nlargest(6).mean() if times_played >= 6 else avg_score
                     worst6 = ps["score"].nsmallest(6).mean() if times_played >= 6 else avg_score
+
+                    # Totals
                     total_birdies = ps["birdies"].sum()
                     total_eagles = ps["eagles"].sum()
                     total_hats = ps["hat"].sum()
 
-                    summary[display_name] = {
+                    summary[player] = {
                         "Times Played": times_played,
                         "Last Score": f"{int(last_score)} {trend}",
                         "Average": avg_score,
@@ -439,10 +436,7 @@ elif menu == "Summary":
                     }
 
                 summary_df = pd.DataFrame(summary).T
-                # Add hat icon to latest hat-holder
-                summary_df["Player"] = summary_df["Player"].apply(
-                    lambda p: f"{p} {hat_icon}" if p == latest_hat_player else p
-                )
+
                 # --- Ranks ---
                 summary_df["Avg Rank"] = summary_df["Average"].rank(ascending=False, method="min")
                 summary_df["Best Round Rank"] = summary_df["Best Round"].rank(ascending=False, method="min")
@@ -450,7 +444,7 @@ elif menu == "Summary":
                 summary_df["Rank Best 6"] = summary_df["Avg best 6"].rank(ascending=False, method="min")
                 summary_df["Rank Worst"] = summary_df["Avg worst 6"].rank(ascending=True, method="min")
 
-                # ✅ Cast ranks & counts to integers
+                # ✅ Cast ranks and counts
                 rank_cols = ["Avg Rank", "Best Round Rank", "Worst Round Rank", "Rank Best 6", "Rank Worst"]
                 for col in rank_cols:
                     summary_df[col] = summary_df[col].astype("Int64")
@@ -469,7 +463,12 @@ elif menu == "Summary":
                 ]
                 summary_df = summary_df[cols_order]
 
-                # --- Highlight function ---
+                # ✅ Add red cap icon inline (only for latest hat holder)
+                summary_df["Player"] = summary_df["Player"].apply(
+                    lambda p: f"{p} {hat_icon}" if p == latest_hat_player else p
+                )
+
+                # Highlight ranks
                 def highlight_ranks(val, col):
                     if "Rank" in col:
                         if val == 1:
@@ -500,19 +499,18 @@ elif menu == "Summary":
                         "Rank Best 6": "{:.0f}",
                         "Rank Worst": "{:.0f}"
                     })
-                    .to_html(escape=False)
+                    .to_html(escape=False)  # 🚨 critical so <img> renders
                 )
 
-                # ✅ Render styled DataFrame correctly
-                st.markdown(
-                    "<div style='overflow-x:auto; width:160%'>" + styled_summary + "</div>",
-                    unsafe_allow_html=True
-                )
+                st.markdown(f"<div style='overflow-x:auto; width:160%'>{styled_summary}</div>", unsafe_allow_html=True)
+
 
                 # --- Add per-player charts ---
                 st.subheader("📊 Player Score Trends")
-                for player in summary_df["Player"]:
-                    with st.expander(f"📈 {player}'s scores"):
+
+                # Use the original clean list of players from df (not summary_df["Player"])
+                for player in sorted(df["player"].unique()):
+                    if st.button(f"Show {player}'s scores", key=f"chart_{player}"):
                         player_scores = df[df["player"] == player][["round_date", "score"]]
 
                         if not player_scores.empty:
