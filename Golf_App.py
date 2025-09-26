@@ -463,9 +463,7 @@ elif menu == "Summary":
                     "Total Birdies", "Total Eagles", "Total Hats"
                 ]
                 summary_df = summary_df[cols_order]
-                summary_df = df.drop(
-                    columns=["index"])
-                    
+
 
                 # ✅ Add red cap icon inline (only for latest hat holder)
                 summary_df["Player"] = summary_df["Player"].apply(
