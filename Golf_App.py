@@ -455,9 +455,9 @@ elif menu == "Summary":
                     summary_df[col] = summary_df[col].astype("Int64")
 
                 # Reorder
+                summary_df = summary_df.reset_index().rename(columns={"index": "Player"})
                 # Reorder by Avg Rank (ascending = best first)
                 summary_df = summary_df.sort_values("Avg Rank", ascending=True).reset_index(drop=True)
-
                 cols_order = [
                     "Player", "Times Played", "Last Score", "Average", "Avg Rank",
                     "Best Round", "Best Round Rank", "Worst Round", "Worst Round Rank",
