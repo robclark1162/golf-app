@@ -549,7 +549,7 @@ elif menu == "Add Round":
 
     for _, row in players.iterrows():
         # Create 5 columns: Player name + 4 inputs
-        col0, col1, col2, col3, col4 = st.columns([2, 2, 1, 1, 1])  
+        col0, col1, col2, col3, col4 = st.columns([2, 1, 1, 1, 1])  
 
         with col0:
             st.markdown(f"**{row['name']}**")  # player name in leftmost col
