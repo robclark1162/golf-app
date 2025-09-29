@@ -145,11 +145,12 @@ def update_score(round_id, player_id, score, birdies, eagles, hat):
 if "user" not in st.session_state:
     st.session_state["user"] = None
 
-st.logo("twitchers.jpg")
+
 st.title("🏌️ Golf Twitchers Competition Tracker")
 
-if st.session_state["user"] is None:s
+if st.session_state["user"] is None:
     st.subheader("🔑 Login")
+    st.logo("twitchers.jpg")
 
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
