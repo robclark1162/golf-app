@@ -150,7 +150,7 @@ st.title("🏌️ Golf Twitchers Competition Tracker")
 
 if st.session_state["user"] is None:
     st.subheader("🔑 Login")
-    st.logo("twitchers.jpg")
+    st.logo("twitchers.jpg", size="large")
 
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
