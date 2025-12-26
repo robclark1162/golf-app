@@ -247,7 +247,7 @@ elif menu == "Scores by Day":
         st.info("No scores available yet.")
     else:
         # --- Add filter date ---
-        min_date = pd.to_datetime(df["round_date"]).min().date()
+        min_date = 1/1/2026 #pd.to_datetime(df["round_date"]).min().date()
         start_date = st.date_input(
             "📅 Only include scores after:",
             value=min_date,
