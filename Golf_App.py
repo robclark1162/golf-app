@@ -387,8 +387,6 @@ elif menu == "Summary":
             min_value=min_date,
             key="scores_by_day_date"
         )
-
-
         if df.empty:
             st.warning("No scores found after selected date.")
         else:
