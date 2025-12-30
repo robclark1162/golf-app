@@ -376,22 +376,31 @@ elif menu == "Summary":
     else:
         # --- Add filter date ---
         min_date = pd.to_datetime(df["round_date"]).min().date()
-        default_date = min(date(2026, 1, 1), min_date)
+        default_date = max(date(2026, 1, 1), min_date)
 
         # Initialise session state once
-        if "scores_by_day_date" not in st.session_state:
-            st.session_state.scores_by_day_date = default_date
+        if "summary_start_date" not in st.session_state:
+            st.session_state.summary_start_date = default_date
 
         start_date = st.date_input(
             "📅 Only include scores after:",
             min_value=min_date,
-            key="scores_by_day_date"
+            key="summary_start_date"
         )
+        # ✅ APPLY DATE FILTER
+        df = df[pd.to_datetime(df["round_date"]).dt.date >= start_date]
+        
         if df.empty:
-            st.warning("No scores found after selected date.")
+            st.warning(f"No scores found after {start_date}.")
         else:
             # --- Minimum rounds filter ---
-            min_rounds = st.number_input("Minimum rounds required", min_value=1, max_value=20, value=6, step=1)
+            min_rounds = st.number_input(
+                "Minimum rounds required",
+                min_value=1,
+                max_value=20,
+                value=6,
+                step=1
+            )
             rounds_count = df.groupby("player")["round_date"].nunique().reset_index()
             rounds_count.columns = ["player", "rounds_played"]
             eligible_players = rounds_count[rounds_count["rounds_played"] >= min_rounds]["player"]
