@@ -376,7 +376,7 @@ elif menu == "Summary":
     else:
         # --- Add filter date ---
         min_date = pd.to_datetime(df["round_date"]).min().date()
-        default_date = max(date(2026, 1, 1), min_date)
+        default_date = min(date(2026, 1, 1), min_date)
 
         # Initialise session state once
         if "scores_by_day_date" not in st.session_state:
@@ -384,7 +384,7 @@ elif menu == "Summary":
 
         start_date = st.date_input(
             "📅 Only include scores after:",
-            min_value=default_date,
+            min_value=min_date,
             key="scores_by_day_date"
         )
 
