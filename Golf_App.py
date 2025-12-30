@@ -254,8 +254,6 @@ else:
                     .properties(title=f"{player_sel} Scores Over Time", height=300)
                 )
                 st.altair_chart(player_chart, use_container_width=True)
-
-    # --- Scores by Day ---
     elif menu == "Scores by Day":
         st.subheader("Scores by Day")
         df = load_scores()
@@ -384,7 +382,6 @@ else:
                         .properties(title=f"{player_sel} – Birdies & Eagles Over Time", height=300)
                     )
                     st.altair_chart(combined_chart, use_container_width=True)
-
     elif menu == "Summary":
         st.subheader("Player Summary")
         df = load_scores()
@@ -557,7 +554,6 @@ else:
                     )
 
                     st.markdown(f"<div style='overflow-x:auto; width:160%'>{styled_summary}</div>", unsafe_allow_html=True)
-    # --- Add Round ---
     elif menu == "Add Round":
         st.subheader("Add a New Round")
 
