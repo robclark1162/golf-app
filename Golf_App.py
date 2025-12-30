@@ -202,13 +202,7 @@ else:
 # --- App Menu (only after login) ---
     menu = st.sidebar.radio(
         "Menu",
-        ["View Scores","Summary", 
-         "Scores by Day", 
-         "Add Round", 
-         "Edit Round", 
-         "Manage Players", 
-         "Manage Courses", 
-         "Configuration"]
+        ["View Scores","Summary", "Scores by Day", "Add Round","Edit Round","Manage Players","Manage Courses","Configuration"]
     )
 
 # --- View Scores ---
@@ -391,8 +385,6 @@ else:
                     )
                     st.altair_chart(combined_chart, use_container_width=True)
 
-
-
     elif menu == "Summary":
         st.subheader("Player Summary")
         df = load_scores()
@@ -565,8 +557,6 @@ else:
                     )
 
                     st.markdown(f"<div style='overflow-x:auto; width:160%'>{styled_summary}</div>", unsafe_allow_html=True)
-
-
     # --- Add Round ---
     elif menu == "Add Round":
         st.subheader("Add a New Round")
@@ -723,7 +713,6 @@ else:
                         st.rerun()
         else:
             st.info("No players found.")
-
     elif menu == "Manage Courses":
         st.subheader("Manage Courses")
 
