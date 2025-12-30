@@ -7,6 +7,14 @@ import os
 import base64
 import altair as alt
 
+# --- App Configuration Defaults ---
+DEFAULT_CONFIG = {
+    "competition_start_date": date(2026, 1, 1),
+    "minimum_rounds": 6,
+    "maximum_rounds_limit": 20,
+}
+
+
 if "user" not in st.session_state:
     st.session_state["user"] = None
 if "access_token" not in st.session_state:
@@ -182,10 +190,26 @@ else:
         st.session_state["refresh_token"] = None
         st.rerun()
 
-    # --- App Menu (only after login) ---
+
+#   Initialise config once
+    def init_config():
+        for k, v in DEFAULT_CONFIG.items():
+            if k not in st.session_state:
+                st.session_state[k] = v
+
+    init_config()
+
+# --- App Menu (only after login) ---
     menu = st.sidebar.radio(
         "Menu",
-        ["View Scores", "Summary", "Scores by Day", "Add Round", "Edit Round", "Manage Players", "Manage Courses"]
+        ["View Scores", 
+         "Summary", 
+         "Scores by Day", 
+         "Add Round", 
+         "Edit Round", 
+         "Manage Players", 
+         "Manage Courses", 
+         "Configuration"]
     )
 
 # --- View Scores ---
@@ -237,6 +261,8 @@ else:
                     .properties(title=f"{player_sel} Scores Over Time", height=300)
                 )
                 st.altair_chart(player_chart, use_container_width=True)
+
+    # --- Scores by Day ---
     elif menu == "Scores by Day":
         st.subheader("Scores by Day")
         df = load_scores()
@@ -246,7 +272,10 @@ else:
         else:
             # --- Add filter date ---
             min_date = pd.to_datetime(df["round_date"]).min().date()
-            default_date = max(date(2026, 1, 1), min_date)
+            default_date = max(
+                st.session_state.competition_start_date,
+                min_date
+            )
 
             # Initialise session state once
             if "scores_by_day_date" not in st.session_state:
@@ -371,33 +400,50 @@ else:
 
         if df.empty:
             st.info("No scores available yet.")
-        else:
-            # --- Add filter date ---
-            min_date = pd.to_datetime(df["round_date"]).min().date()
-            default_date = min(date(2026, 1, 1), min_date)
+            st.stop()
 
-            # Initialise session state once
-            if "scores_by_day_date" not in st.session_state:
-                st.session_state.scores_by_day_date = default_date
+        # --- Competition start filter ---
+        min_date = pd.to_datetime(df["round_date"]).min().date()
+        default_date = max(st.session_state.competition_start_date, min_date)
 
-            start_date = st.date_input(
-                "📅 Only include scores after:",
-                min_value=min_date,
-                key="scores_by_day_date"
+        if "summary_start_date" not in st.session_state:
+            st.session_state.summary_start_date = default_date
+
+        start_date = st.date_input(
+            "📅 Only include scores after:",
+            min_value=min_date,
+            key="summary_start_date"
+        )
+
+        df = df[pd.to_datetime(df["round_date"]).dt.date >= start_date]
+
+        if df.empty:
+            st.warning(f"No scores found after {start_date}.")
+            st.stop()
+
+        # --- Minimum rounds filter (ONLY ONCE) ---
+        min_rounds = st.number_input(
+            "🎯 Minimum rounds required",
+            min_value=1,
+            max_value=st.session_state.maximum_rounds_limit,
+            value=st.session_state.minimum_rounds,
+            step=1
+        )
+
+        rounds_count = df.groupby("player")["round_date"].nunique().reset_index()
+        eligible_players = rounds_count[
+            rounds_count["round_date"] >= min_rounds
+        ]["player"]
+
+        df = df[df["player"].isin(eligible_players)]
+
+        if df.empty:
+            st.warning(
+                f"No players have at least {min_rounds} rounds after {start_date}."
             )
-            if df.empty:
-                st.warning("No scores found after selected date.")
-            else:
-                # --- Minimum rounds filter ---
-                min_rounds = st.number_input("Minimum rounds required", min_value=1, max_value=20, value=6, step=1)
-                rounds_count = df.groupby("player")["round_date"].nunique().reset_index()
-                rounds_count.columns = ["player", "rounds_played"]
-                eligible_players = rounds_count[rounds_count["rounds_played"] >= min_rounds]["player"]
-                df = df[df["player"].isin(eligible_players)]
+            st.stop()
 
-                if df.empty:
-                    st.warning(f"No players found with at least {min_rounds} rounds after {start_date}.")
-                else:
+        else:
                     summary = {}
                     players = sorted(df["player"].unique())
 
@@ -705,3 +751,42 @@ else:
                     st.rerun()
         else:
             st.info("No courses found.")
+    elif menu == "Configuration":
+        st.subheader("⚙️ Competition Configuration")
+
+        st.markdown("Adjust global competition settings used across the app.")
+
+        st.session_state.competition_start_date = st.date_input(
+            "🏁 Competition start date",
+            value=st.session_state.competition_start_date
+        )
+
+        st.session_state.minimum_rounds = st.number_input(
+            "🎯 Minimum rounds required",
+            min_value=1,
+            max_value=st.session_state.maximum_rounds_limit,
+            value=st.session_state.minimum_rounds,
+            step=1
+        )
+
+        st.session_state.maximum_rounds_limit = st.number_input(
+            "🔒 Maximum allowed minimum rounds",
+            min_value=1,
+            max_value=50,
+            value=st.session_state.maximum_rounds_limit,
+            step=1
+        )
+
+        if st.button("🔄 Reset to defaults"):
+            for k, v in DEFAULT_CONFIG.items():
+                st.session_state[k] = v
+            st.success("Configuration reset to defaults")
+
+        st.divider()
+        st.markdown("### 📋 Current configuration")
+        st.json({
+            "competition_start_date": str(st.session_state.competition_start_date),
+            "minimum_rounds": st.session_state.minimum_rounds,
+            "maximum_rounds_limit": st.session_state.maximum_rounds_limit,
+        })
+
