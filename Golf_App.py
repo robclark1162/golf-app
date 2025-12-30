@@ -80,7 +80,17 @@ def delete_course(course_id: int):
     supabase.table("courses").delete().eq("course_id", course_id).execute()
 
 
-# --- Configuration Helpers ---
+def load_scores():
+    response = supabase.table("scores").select(
+        """
+        score,
+        birdies,
+        eagles,
+        hat,
+        players ( player_id, name ),
+        rounds ( round_id, round_date, courses ( course_id, name ) )
+        """
+    ).execute()
 
 def load_config():
     response = supabase.table("configuration").select("key, value").execute()
@@ -94,11 +104,7 @@ def load_config():
 
 
 def save_config(key, value):
-    supabase.table("configuration").upsert({
-        "key": key,
-        "value": value
-    }).execute()
-
+    supabase.table("configuration").insert("{key": key, "value": value).execute()
 
     df = pd.DataFrame(response.data)
 
