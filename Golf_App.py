@@ -236,7 +236,7 @@ def init_config():
         avg_df = df.groupby("player")["score"].mean().reset_index()
         st.bar_chart(avg_df.set_index("player"))
 
-        # --- Score trends (all players) ---
+    # --- Score trends (all players) ---
         st.subheader("📊 Score Trends Over Time")
         if not df.empty:
             chart = (
