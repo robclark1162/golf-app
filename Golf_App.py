@@ -384,7 +384,7 @@ elif menu == "Summary":
 
         start_date = st.date_input(
             "📅 Only include scores after:",
-            min_value=min_date,
+            min_value=default_date,
             key="scores_by_day_date"
         )
 
