@@ -374,10 +374,19 @@ elif menu == "Summary":
     if df.empty:
         st.info("No scores available yet.")
     else:
-        # --- Date filter ---
+        # --- Add filter date ---
         min_date = pd.to_datetime(df["round_date"]).min().date()
-        start_date = st.date_input("📅 Only include scores after:", value=min_date, min_value=min_date)
-        df = df[pd.to_datetime(df["round_date"]) >= pd.to_datetime(start_date)]
+        default_date = max(date(2026, 1, 1), min_date)
+
+        # Initialise session state once
+        if "scores_by_day_date" not in st.session_state:
+            st.session_state.scores_by_day_date = default_date
+
+        start_date = st.date_input(
+            "📅 Only include scores after:",
+            min_value=min_date,
+            key="scores_by_day_date"
+        )
 
         if df.empty:
             st.warning("No scores found after selected date.")
