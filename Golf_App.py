@@ -189,51 +189,51 @@ else:
     )
 
 # --- View Scores ---
-if menu == "View Scores":
-    st.subheader("All Scores")
-    df = load_scores()
+        if menu == "View Scores":
+            st.subheader("All Scores")
+            df = load_scores()
 
-    display_df = df.drop(
-        columns=["player_id", "course_id", "round_id", "score_id"],
-        errors="ignore"
-    )
-    with st.expander("📋 Scrores"):
-        st.dataframe(display_df.reset_index(drop=True), use_container_width=True)
-
-    # --- Average Scores ---
-    st.subheader("Average Scores by Player")
-    avg_df = df.groupby("player")["score"].mean().reset_index()
-    st.bar_chart(avg_df.set_index("player"))
-
-    # --- Score trends (all players) ---
-    st.subheader("📊 Score Trends Over Time")
-    if not df.empty:
-        chart = (
-            alt.Chart(df)
-            .mark_line(point=True)
-            .encode(
-                x="round_date:T",
-                y="score:Q",
-                color="player:N",
-                tooltip=["round_date:T", "player:N", "score:Q", "course:N"]
+            display_df = df.drop(
+                columns=["player_id", "course_id", "round_id", "score_id"],
+                errors="ignore"
             )
-            .properties(height=400)
-        )
-        st.altair_chart(chart, use_container_width=True)
+            with st.expander("📋 Scrores"):
+                st.dataframe(display_df.reset_index(drop=True), use_container_width=True)
 
-        # --- Single player dropdown ---
-        players = sorted(df["player"].unique())
-        player_sel = st.selectbox("🔍 View single player's scores:", players, key="view_scores_player")
-        ps = df[df["player"] == player_sel]
-        if not ps.empty:
-            player_chart = (
-                alt.Chart(ps)
-                .mark_line(point=True)
-                .encode(
-                    x="round_date:T",
-                    y="score:Q",
-                    tooltip=["round_date:T", "score:Q", "course:N"]
+            # --- Average Scores ---
+            st.subheader("Average Scores by Player")
+            avg_df = df.groupby("player")["score"].mean().reset_index()
+            st.bar_chart(avg_df.set_index("player"))
+
+            # --- Score trends (all players) ---
+            st.subheader("📊 Score Trends Over Time")
+            if not df.empty:
+                chart = (
+                    alt.Chart(df)
+                    .mark_line(point=True)
+                    .encode(
+                        x="round_date:T",
+                        y="score:Q",
+                        color="player:N",
+                        tooltip=["round_date:T", "player:N", "score:Q", "course:N"]
+                    )
+                    .properties(height=400)
                 )
-                .properties(title=f"{player_sel} Scores Over Time", height=300)
-            )
-            st.altair_chart(player_chart, use_container_width=True)
+                st.altair_chart(chart, use_container_width=True)
+
+                # --- Single player dropdown ---
+                players = sorted(df["player"].unique())
+                player_sel = st.selectbox("🔍 View single player's scores:", players, key="view_scores_player")
+                ps = df[df["player"] == player_sel]
+                if not ps.empty:
+                    player_chart = (
+                        alt.Chart(ps)
+                        .mark_line(point=True)
+                        .encode(
+                            x="round_date:T",
+                            y="score:Q",
+                            tooltip=["round_date:T", "score:Q", "course:N"]
+                        )
+                        .properties(title=f"{player_sel} Scores Over Time", height=300)
+                    )
+                    st.altair_chart(player_chart, use_container_width=True)
