@@ -744,7 +744,6 @@ else:
 
             st.success("✅ Round updated successfully")
             st.rerun()
-    
     elif menu == "Manage Players":
         st.subheader("Manage Players")
 
