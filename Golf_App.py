@@ -185,7 +185,7 @@ else:
     # --- App Menu (only after login) ---
     menu = st.sidebar.radio(
         "Menu",
-        ["View Scores", "Summary", "Scores by Day", "Add Round", "Edit Round", "Manage Players", "Manage Courses","Config"]
+        ["View Scores", "Summary", "Scores by Day", "Add Round", "Edit Round", "Manage Players", "Manage Courses"]
     )
 
 # --- View Scores ---
@@ -387,7 +387,7 @@ elif menu == "Summary":
             min_value=min_date,
             key="scores_by_day_date"
         )
-        
+
 
         if df.empty:
             st.warning("No scores found after selected date.")
