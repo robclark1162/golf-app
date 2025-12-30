@@ -99,6 +99,7 @@ def save_config(key, value):
         "value": value
     }).execute()
 
+
     df = pd.DataFrame(response.data)
 
     if df.empty:
@@ -199,20 +200,12 @@ else:
 
 
 #   Initialise config once
-def init_config():
-    db_config = load_config()
+    def init_config():
+        for k, v in DEFAULT_CONFIG.items():
+            if k not in st.session_state:
+                st.session_state[k] = v
 
-    for k, default in DEFAULT_CONFIG.items():
-        if k not in st.session_state:
-            if k in db_config:
-                # Handle date stored as string
-                if k.endswith("_date"):
-                    st.session_state[k] = date.fromisoformat(db_config[k])
-                else:
-                    st.session_state[k] = db_config[k]
-            else:
-                st.session_state[k] = default
-
+    init_config()
 
 # --- App Menu (only after login) ---
     menu = st.sidebar.radio(
@@ -768,14 +761,15 @@ elif menu == "Manage Courses":
         st.info("No courses found.")
 elif menu == "Configuration":
     st.subheader("⚙️ Competition Configuration")
+
     st.markdown("Adjust global competition settings used across the app.")
 
-    comp_date = st.date_input(
+    st.session_state.competition_start_date = st.date_input(
         "🏁 Competition start date",
         value=st.session_state.competition_start_date
     )
 
-    min_rounds = st.number_input(
+    st.session_state.minimum_rounds = st.number_input(
         "🎯 Minimum rounds required",
         min_value=1,
         max_value=st.session_state.maximum_rounds_limit,
@@ -783,7 +777,7 @@ elif menu == "Configuration":
         step=1
     )
 
-    max_rounds_limit = st.number_input(
+    st.session_state.maximum_rounds_limit = st.number_input(
         "🔒 Maximum allowed minimum rounds",
         min_value=1,
         max_value=50,
@@ -791,35 +785,16 @@ elif menu == "Configuration":
         step=1
     )
 
-    if st.button("💾 Save configuration"):
-        save_config("competition_start_date", comp_date.isoformat())
-        save_config("minimum_rounds", min_rounds)
-        save_config("maximum_rounds_limit", max_rounds_limit)
-
-        st.session_state.competition_start_date = comp_date
-        st.session_state.minimum_rounds = min_rounds
-        st.session_state.maximum_rounds_limit = max_rounds_limit
-
-        st.success("✅ Configuration saved")
-        st.rerun()
-
     if st.button("🔄 Reset to defaults"):
         for k, v in DEFAULT_CONFIG.items():
-            save_config(
-                k,
-                v.isoformat() if isinstance(v, date) else v
-            )
             st.session_state[k] = v
-
         st.success("Configuration reset to defaults")
-        st.rerun()
 
     st.divider()
-    st.markdown("### 📋 Current configuration (from DB)")
+    st.markdown("### 📋 Current configuration")
     st.json({
         "competition_start_date": str(st.session_state.competition_start_date),
         "minimum_rounds": st.session_state.minimum_rounds,
         "maximum_rounds_limit": st.session_state.maximum_rounds_limit,
     })
-
 
