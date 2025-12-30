@@ -100,11 +100,14 @@ def load_config():
     config = {}
     for row in response.data:
         config[row["key"]] = row["value"]
-    return config
+        return config
 
 
 def save_config(key, value):
-    supabase.table("configuration").insert("{key": key, "value": value).execute()
+    supabase.table("configuration").upsert({
+        "key": key,
+        "value": value
+    }).execute()
 
     df = pd.DataFrame(response.data)
 
