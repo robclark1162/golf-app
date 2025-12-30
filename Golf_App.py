@@ -185,7 +185,7 @@ else:
     # --- App Menu (only after login) ---
     menu = st.sidebar.radio(
         "Menu",
-        ["View Scores", "Summary", "Scores by Day", "Add Round", "Edit Round", "Manage Players", "Manage Courses"]
+        ["View Scores", "Summary", "Scores by Day", "Add Round", "Edit Round", "Manage Players", "Manage Courses","Config"]
     )
 
 # --- View Scores ---
