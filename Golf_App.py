@@ -152,6 +152,26 @@ def update_score(round_id, player_id, score, birdies, eagles, hat):
         "hat": hat
     }).eq("round_id", round_id).eq("player_id", player_id).execute()
 
+def update_round(round_id: int, course_id: int):
+    supabase.table("rounds").update({
+        "course_id": course_id
+    }).eq("round_id", round_id).execute()
+
+
+def batch_update_scores(round_id: int, updates: list[dict]):
+    """
+    updates = [
+        {
+            "round_id": int,
+            "player_id": int,
+            "score": int,
+            "birdies": int,
+            "eagles": int,
+            "hat": bool
+        }
+    ]
+    """
+    supabase.table("scores").upsert(updates).execute()
 
 
 # --- Authentication state ---
@@ -613,7 +633,7 @@ else:
     
         # --- Edit Round ---
     elif menu == "Edit Round":
-        st.subheader("Edit Existing Rounds")
+        st.subheader("Edit Existing Round")
 
         df = load_scores()
 
@@ -622,25 +642,22 @@ else:
             st.stop()
 
         # --- Select round ---
-        round_lookup = df[["round_id", "round_date", "course"]].drop_duplicates()
-
+        rounds = df[["round_id", "round_date", "course"]].drop_duplicates()
         round_choice = st.selectbox(
             "Select Round",
-            round_lookup.apply(
+            rounds.apply(
                 lambda x: f"{x['round_date']} – {x['course']} (ID {x['round_id']})",
                 axis=1
             )
         )
 
         round_id = int(round_choice.split("ID ")[1].rstrip(")"))
-
         round_data = df[df["round_id"] == round_id]
+
         current_course = round_data["course"].iloc[0]
         round_date = round_data["round_date"].iloc[0]
 
-        st.markdown(
-            f"### 🗓 {round_date} &nbsp;&nbsp;📍 **{current_course}**"
-        )
+        st.markdown(f"### 🗓 {round_date}")
 
         # --- Course selector ---
         courses = load_courses()
@@ -649,24 +666,19 @@ else:
         selected_course = st.selectbox(
             "🏌️ Course",
             course_names,
-            index=course_names.index(current_course),
-            key="edit_round_course"
+            index=course_names.index(current_course)
         )
 
         selected_course_id = int(
             courses[courses["name"] == selected_course]["course_id"].iloc[0]
         )
 
-        if selected_course != current_course:
-            if st.button("💾 Update Course"):
-                update_round_course(round_id, selected_course_id)
-                st.success("✅ Course updated")
-                st.rerun()
-
         st.divider()
-        st.markdown("### ✏️ Edit Player Scores")
+        st.markdown("### ✏️ Edit Scores")
 
-        # --- Edit player scores ---
+        # --- Collect edits in memory ---
+        updates = []
+
         for _, row in round_data.iterrows():
             col1, col2, col3, col4, col5 = st.columns([3, 2, 2, 2, 2])
 
@@ -674,52 +686,64 @@ else:
                 st.write(row["player"])
 
             with col2:
-                new_score = st.number_input(
+                score = st.number_input(
                     "Score",
                     min_value=0,
                     max_value=200,
                     step=1,
                     value=int(row["score"]) if row["score"] is not None else 0,
-                    key=f"score_edit_{row['player_id']}"
+                    key=f"edit_score_{row['player_id']}"
                 )
 
             with col3:
-                new_birdies = st.number_input(
+                birdies = st.number_input(
                     "Birdies",
                     min_value=0,
                     max_value=18,
                     step=1,
                     value=int(row["birdies"]) if row["birdies"] is not None else 0,
-                    key=f"birdies_edit_{row['player_id']}"
+                    key=f"edit_birdies_{row['player_id']}"
                 )
 
             with col4:
-                new_eagles = st.number_input(
+                eagles = st.number_input(
                     "Eagles",
                     min_value=0,
                     max_value=18,
                     step=1,
                     value=int(row["eagles"]) if row["eagles"] is not None else 0,
-                    key=f"eagles_edit_{row['player_id']}"
+                    key=f"edit_eagles_{row['player_id']}"
                 )
 
             with col5:
-                new_hat = st.checkbox(
+                hat = st.checkbox(
                     "Hat",
                     value=bool(row["hat"]),
-                    key=f"hat_edit_{row['player_id']}"
+                    key=f"edit_hat_{row['player_id']}"
                 )
 
-            if st.button(f"Update {row['player']}", key=f"update_{row['player_id']}"):
-                update_score(
-                    round_id,
-                    row["player_id"],
-                    new_score,
-                    new_birdies,
-                    new_eagles,
-                    new_hat
-                )
-                st.success(f"✅ Updated {row['player']}")
+            updates.append({
+                "round_id": round_id,
+                "player_id": row["player_id"],
+                "score": score,
+                "birdies": birdies,
+                "eagles": eagles,
+                "hat": hat
+            })
+
+        st.divider()
+
+        if st.button("💾 Save Round"):
+            with st.spinner("Saving changes..."):
+                # Update course (only if changed)
+                if selected_course != current_course:
+                    update_round(round_id, selected_course_id)
+
+                # Batch update scores
+                batch_update_scores(round_id, updates)
+
+            st.success("✅ Round updated successfully")
+            st.rerun()
     
     elif menu == "Manage Players":
         st.subheader("Manage Players")
