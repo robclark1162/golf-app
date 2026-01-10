@@ -53,8 +53,15 @@ def load_players():
     return pd.DataFrame(response.data)
 
 
-def insert_player(name: str):
-    supabase.table("players").insert({"name": name, "Full Name": full_name, "Image":image_url}).execute()
+def insert_player(name: str, full_name: str = "", image_url: str = ""):
+    if not name.strip():
+        raise ValueError("Player name cannot be empty")
+
+    supabase.table("players").insert({
+        "name": name.strip(),
+        "full_name": full_name.strip(),
+        "image_url": image_url.strip()
+    }).execute()
 
 
 def delete_player(player_id: int):
